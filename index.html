@@ -41,7 +41,7 @@
   html { scroll-behavior: smooth; }
   .package-card input:checked + div { border-color: #d97706; box-shadow: 0 0 0 2px #f59e0b; background: #fffbeb; }
   ::selection { background: #fbbf24; color: #071633; }
-  .hero-stripes { background-image: repeating-linear-gradient(-45deg, rgba(255,255,255,0.035) 0 2px, transparent 2px 16px); }
+  .hero-stripes { background-image: repeating-linear-gradient(-45deg, rgba(12,33,69,0.05) 0 2px, transparent 2px 16px); }
   .fade-in { animation: fadeIn .4s ease-in; }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(8px);} to { opacity: 1; transform: none;} }
   .spinner { border: 3px solid #d9e7f6; border-top: 3px solid #1f4f96; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; vertical-align: -4px; }
@@ -56,24 +56,23 @@
 </div>
 
 <!-- ============ HEADER ============ -->
-<header class="relative overflow-hidden bg-waxers-950 text-white">
+<header class="relative overflow-hidden bg-gradient-to-b from-white via-sky-50 to-waxers-100">
   <div class="absolute inset-0 hero-stripes"></div>
-  <div class="absolute inset-0 bg-gradient-to-b from-waxers-900/70 via-transparent to-waxers-950/90"></div>
   <div class="relative max-w-6xl mx-auto px-4 pt-12 pb-14 sm:pt-16 sm:pb-20 text-center">
-    <img src="https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/waxers-logo.png" alt="Markham Waxers logo" class="h-36 sm:h-44 w-auto mx-auto mb-7 drop-shadow-2xl" />
-    <p class="text-amber-400 font-bold tracking-[0.3em] text-xs sm:text-sm mb-4">COMMUNITY FUNDRAISER</p>
-    <h1 class="font-display text-5xl sm:text-7xl font-black tracking-tight leading-[0.95]">Markham Waxers<br />Raffle</h1>
-    <p class="mt-5 text-waxers-100 text-lg max-w-2xl mx-auto">Support your favourite player or family &mdash; every ticket helps fund the season. Winners drawn live at season&rsquo;s end.</p>
-    <div class="mt-7 flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-sm text-waxers-200">
-      <span><strong id="statPrizeCount" class="text-white font-extrabold text-base">&ndash;</strong> prizes</span>
-      <span class="hidden sm:inline text-waxers-500">&bull;</span>
-      <span><strong id="statTotalValue" class="text-white font-extrabold text-base">&ndash;</strong> total value</span>
-      <span class="hidden sm:inline text-waxers-500">&bull;</span>
+    <img src="https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/waxers-logo.png" alt="Markham Waxers logo" class="h-40 sm:h-52 w-auto mx-auto mb-7 drop-shadow-xl" />
+    <p class="text-amber-600 font-bold tracking-[0.3em] text-xs sm:text-sm mb-4">COMMUNITY FUNDRAISER</p>
+    <h1 class="font-display text-5xl sm:text-7xl font-black tracking-tight leading-[0.95] text-waxers-950">Markham Waxers<br />Raffle</h1>
+    <p class="mt-5 text-slate-600 text-lg max-w-2xl mx-auto">Support your favourite player or family &mdash; every ticket helps fund the season. Winners drawn live at season&rsquo;s end.</p>
+    <div class="mt-7 flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-sm text-slate-600">
+      <span><strong id="statPrizeCount" class="text-waxers-950 font-extrabold text-base">&ndash;</strong> prizes</span>
+      <span class="hidden sm:inline text-slate-300">&bull;</span>
+      <span><strong id="statTotalValue" class="text-waxers-950 font-extrabold text-base">&ndash;</strong> total value</span>
+      <span class="hidden sm:inline text-slate-300">&bull;</span>
       <span>100% funds the season</span>
     </div>
     <a href="#tickets" class="inline-block mt-9 bg-amber-400 text-amber-950 font-display font-extrabold uppercase tracking-wider px-10 py-4 rounded-full shadow-xl hover:bg-amber-300 hover:scale-105 transition">Buy Tickets</a>
   </div>
-  <div class="relative h-1.5 bg-gradient-to-r from-amber-600 via-amber-300 to-amber-600"></div>
+  <div class="relative h-1.5 bg-gradient-to-r from-waxers-800 via-amber-400 to-waxers-800"></div>
 </header>
 
 <!-- ============ PRIZE SHOWCASE ============ -->
@@ -166,9 +165,9 @@
 </section>
 
 <!-- ============ FOOTER ============ -->
-<footer class="bg-waxers-950 text-waxers-200 text-center text-sm px-4 py-8 mt-10">
+<footer class="bg-white border-t border-slate-200 text-slate-500 text-center text-sm px-4 py-10 mt-10">
   <img src="https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/waxers-logo.png" alt="Markham Waxers logo" class="h-16 w-auto mx-auto mb-4" />
-  <p class="font-bold text-white">Markham Waxers &mdash; Community Raffle Fundraiser</p>
+  <p class="font-bold text-waxers-950">Markham Waxers &mdash; Community Raffle Fundraiser</p>
   <p class="mt-1">Questions? Contact the fundraising committee. Sample page &mdash; official rules to be published.</p>
 </footer>
 
