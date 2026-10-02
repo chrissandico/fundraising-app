@@ -113,9 +113,7 @@
     <div id="emtBox" class="hidden bg-waxers-50 border border-waxers-200 rounded-xl p-4 mb-8">
       <p class="text-sm text-slate-600">Send your Interac e-Transfer to:</p>
       <p id="emtEmailDisplay" class="font-mono font-bold text-waxers-800 text-lg break-all"></p>
-      <p class="text-sm text-slate-600 mt-2">Your payment reference code:</p>
-      <p id="refCodeDisplay" class="font-mono font-bold text-waxers-800 text-lg"></p>
-      <p class="text-xs text-slate-500 mt-2">Include this reference code in your e-Transfer memo so your payment can be matched.</p>
+      <p class="text-xs text-slate-500 mt-3">After you submit, you'll get a payment reference code — include it in your e-Transfer memo so your payment can be matched.</p>
     </div>
 
     <!-- Buyer details -->
@@ -186,8 +184,9 @@ const CONFIG = {
   APPS_SCRIPT_URL: "",
 
   ORG_NAME: "Markham Waxers",
-  REF_CODE_PREFIX: "MW-EMT-",   // reference codes look like MW-EMT-4821
   SINGLE_TICKET_PRICE: 10,      // price per ticket for custom quantities
+  // NOTE: reference codes are issued by the Apps Script backend (unique and
+  // sequential) — the page no longer generates them.
 };
 
 /* ---------- SAMPLE DATA: replace with the real roster before launch.
@@ -235,7 +234,6 @@ const state = {
   packageId: "bundle",
   customQty: 0,
   participant: null,
-  refCode: "",
 };
 
 const $ = (id) => document.getElementById(id);
@@ -293,9 +291,7 @@ function renderParticipants() {
     const idx = sel.value === "" ? -1 : Number(sel.value);
     state.participant = idx >= 0 ? PARTICIPANTS[idx] : null;
     if (state.participant) {
-      state.refCode = CONFIG.REF_CODE_PREFIX + Math.floor(1000 + Math.random() * 9000);
       $("emtEmailDisplay").textContent = state.participant.emtEmail;
-      $("refCodeDisplay").textContent = state.refCode;
       $("emtBox").classList.remove("hidden");
     } else {
       $("emtBox").classList.add("hidden");
@@ -361,17 +357,22 @@ async function submitOrder() {
   }
 
   const o = currentOrder();
+  // Stable per-submit ID: lets the backend recognise a retried submission
+  // (double-click, network retry) and return the original order instead of
+  // issuing duplicate tickets.
+  const clientOrderId = (window.crypto && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : "web-" + Date.now() + "-" + Math.floor(Math.random() * 1e9);
   const payload = {
     timestamp: new Date().toISOString(),
     buyerName: $("buyerName").value.trim(),
     buyerEmail: $("buyerEmail").value.trim(),
     buyerPhone: $("buyerPhone").value.trim(),
     selectedParticipant: state.participant.name,
-    emtEmail: state.participant.emtEmail,
     packageSelected: o.pkgLabel,
     ticketCount: o.qty,
     totalAmount: Number(o.total.toFixed(2)),
-    referenceCode: state.refCode,
+    clientOrderId: clientOrderId,
     termsAccepted: true,
   };
 
@@ -388,7 +389,7 @@ async function submitOrder() {
     });
     const data = await res.json();
     if (data.status !== "success") throw new Error(data.message || "Server returned an error.");
-    showSuccess(payload, data.tickets || []);
+    showSuccess(payload, data);
   } catch (err) {
     showError(["Could not submit your order: " + err.message + ". Please try again."]);
   } finally {
@@ -401,24 +402,33 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
-function showSuccess(payload, tickets) {
+function showSuccess(payload, data) {
+  const tickets = data.tickets || [];
+  const refCode = data.referenceCode || "";
   const ticketList = tickets.length ? tickets.join(", ") : "(assigned — see your email receipt)";
+  const emailNote = data.emailSent === false
+    ? `<p class="mt-4 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">We couldn't email your receipt &mdash; but your tickets above are reserved. Contact the fundraising committee if you need a copy.</p>`
+    : `<p class="text-sm text-slate-500">A receipt with these details was emailed to <strong>${escapeHtml(payload.buyerEmail)}</strong>.<br/>
+    Please complete your e-Transfer with the reference code in the memo &mdash; your tickets are confirmed once payment is verified.</p>`;
+  const dupNote = data.duplicate
+    ? `<p class="text-xs text-slate-400 mb-4">This looks like a resubmission &mdash; showing your original order, no duplicate tickets were issued.</p>`
+    : "";
   $("resultCard").innerHTML = `
     <div class="w-16 h-16 mx-auto rounded-full bg-green-100 flex items-center justify-center mb-4">
       <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
     </div>
     <h2 class="text-2xl font-extrabold mb-2">Order received!</h2>
+    ${dupNote}
     <p class="text-slate-500 mb-6">Thanks, ${escapeHtml(payload.buyerName)} &mdash; your tickets are reserved.</p>
     <div class="text-left bg-slate-50 border rounded-2xl p-5 mb-5 text-sm space-y-2">
-      <div class="flex justify-between"><span class="text-slate-500">Reference code</span><strong class="font-mono">${escapeHtml(payload.referenceCode)}</strong></div>
+      <div class="flex justify-between"><span class="text-slate-500">Reference code</span><strong class="font-mono">${escapeHtml(refCode)}</strong></div>
       <div class="flex justify-between"><span class="text-slate-500">Supporting</span><strong>${escapeHtml(payload.selectedParticipant)}</strong></div>
       <div class="flex justify-between"><span class="text-slate-500">Package</span><strong>${escapeHtml(payload.packageSelected)} (${payload.ticketCount} tickets)</strong></div>
       <div class="flex justify-between text-base pt-2 border-t"><span class="text-slate-500">Total due via EMT</span><strong>${money(payload.totalAmount)}</strong></div>
-      <div class="pt-2 border-t"><span class="text-slate-500">Send Interac e-Transfer to</span><br/><strong class="font-mono break-all">${escapeHtml(payload.emtEmail)}</strong></div>
+      <div class="pt-2 border-t"><span class="text-slate-500">Send Interac e-Transfer to</span><br/><strong class="font-mono break-all">${escapeHtml(state.participant.emtEmail)}</strong></div>
       <div class="pt-2 border-t"><span class="text-slate-500">Your ticket numbers</span><br/><strong class="font-mono break-words">${escapeHtml(ticketList)}</strong></div>
     </div>
-    <p class="text-sm text-slate-500">A receipt with these details was emailed to <strong>${escapeHtml(payload.buyerEmail)}</strong>.<br/>
-    Please complete your e-Transfer with the reference code in the memo &mdash; your tickets are confirmed once payment is verified.</p>`;
+    ${emailNote}`;
   $("resultSection").classList.remove("hidden");
   $("resultSection").scrollIntoView({ behavior: "smooth" });
 }
