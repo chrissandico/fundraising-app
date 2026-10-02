@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Markham Waxers &mdash; Community Raffle Fundraiser</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          waxers: {
+            50:  "#eef4fb",
+            100: "#d9e7f6",
+            200: "#b3cfee",
+            300: "#84addf",
+            400: "#5587cd",
+            500: "#2f66b3",
+            600: "#1f4f96",
+            700: "#173d76",
+            800: "#122e5b",
+            900: "#0c2145",
+            950: "#071633"
+          },
+          ice: "#7dd3fc"
+        }
+      }
+    }
+  };
+</script>
+<style>
+  html { scroll-behavior: smooth; }
+  .package-card input:checked + div { border-color: #1f4f96; box-shadow: 0 0 0 2px #1f4f96; background: #eef4fb; }
+  .fade-in { animation: fadeIn .4s ease-in; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px);} to { opacity: 1; transform: none;} }
+  .spinner { border: 3px solid #d9e7f6; border-top: 3px solid #1f4f96; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; vertical-align: -4px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased">
+
+<!-- ============ DEMO / SAMPLE DATA BANNER ============ -->
+<div class="bg-amber-400 text-amber-950 text-center text-sm font-semibold px-4 py-2">
+  Demo mode: this page is running with <span class="underline">sample data</span> (prizes, players, EMT emails).
+  Wire in the real roster and your Apps Script URL before launch. See README.md.
+</div>
+
+<!-- ============ HEADER ============ -->
+<header class="bg-gradient-to-b from-waxers-950 via-waxers-900 to-waxers-800 text-white">
+  <div class="max-w-6xl mx-auto px-4 py-10 sm:py-14 text-center">
+    <div class="inline-flex items-center gap-2 bg-white/10 rounded-full px-4 py-1 text-sm font-medium tracking-wide mb-4">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/></svg>
+      Community Fundraiser
+    </div>
+    <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight">Markham Waxers Raffle</h1>
+    <p class="mt-3 text-waxers-100 text-lg max-w-2xl mx-auto">Support your favourite player or family &mdash; every ticket helps fund the season. Winners drawn live at season&rsquo;s end.</p>
+    <a href="#tickets" class="inline-block mt-6 bg-white text-waxers-900 font-bold px-8 py-3 rounded-full shadow-lg hover:bg-waxers-50 transition">Buy Tickets</a>
+  </div>
+</header>
+
+<!-- ============ HOW IT WORKS ============ -->
+<section class="max-w-6xl mx-auto px-4 py-10">
+  <h2 class="text-2xl font-bold text-center mb-8">How it works</h2>
+  <div class="grid sm:grid-cols-3 gap-6">
+    <div class="bg-white rounded-2xl shadow p-6 text-center">
+      <div class="w-12 h-12 mx-auto rounded-full bg-waxers-100 text-waxers-700 flex items-center justify-center font-extrabold text-xl mb-3">1</div>
+      <h3 class="font-bold mb-1">Pick your tickets</h3>
+      <p class="text-sm text-slate-500">Choose a ticket package or set a custom quantity.</p>
+    </div>
+    <div class="bg-white rounded-2xl shadow p-6 text-center">
+      <div class="w-12 h-12 mx-auto rounded-full bg-waxers-100 text-waxers-700 flex items-center justify-center font-extrabold text-xl mb-3">2</div>
+      <h3 class="font-bold mb-1">Choose who to support</h3>
+      <p class="text-sm text-slate-500">Select a player or family &mdash; the Interac e-Transfer email updates automatically.</p>
+    </div>
+    <div class="bg-white rounded-2xl shadow p-6 text-center">
+      <div class="w-12 h-12 mx-auto rounded-full bg-waxers-100 text-waxers-700 flex items-center justify-center font-extrabold text-xl mb-3">3</div>
+      <h3 class="font-bold mb-1">Send your EMT &amp; get tickets</h3>
+      <p class="text-sm text-slate-500">E-transfer the total using your reference code. Ticket numbers and a receipt arrive by email.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PRIZE SHOWCASE ============ -->
+<section class="max-w-6xl mx-auto px-4 pb-10">
+  <h2 class="text-2xl font-bold text-center mb-2">Raffle Prizes</h2>
+  <p class="text-center text-slate-500 mb-8">Every ticket is entered into the draw for all prizes below.</p>
+  <div id="prizeGrid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+</section>
+
+<!-- ============ TICKET PURCHASE ============ -->
+<section id="tickets" class="bg-white border-y border-slate-200">
+  <div class="max-w-3xl mx-auto px-4 py-10">
+
+    <h2 class="text-2xl font-bold text-center mb-8">Get your tickets</h2>
+
+    <!-- Packages -->
+    <h3 class="font-bold mb-3">1. Choose a package</h3>
+    <div id="packageList" class="grid sm:grid-cols-3 gap-4 mb-4"></div>
+
+    <div class="flex items-center gap-3 bg-slate-50 border rounded-xl px-4 py-3 mb-8">
+      <label for="customQty" class="text-sm font-medium whitespace-nowrap">Or custom quantity:</label>
+      <input id="customQty" type="number" min="1" max="100" value="" placeholder="e.g. 7"
+             class="w-24 border rounded-lg px-3 py-2 text-center" />
+      <span class="text-sm text-slate-500">$10 per ticket</span>
+    </div>
+
+    <!-- Participant -->
+    <h3 class="font-bold mb-3">2. Choose a player or family to support</h3>
+    <select id="participantSelect" class="w-full border rounded-xl px-4 py-3 mb-3 bg-white">
+      <option value="">-- Select a player / family --</option>
+    </select>
+    <div id="emtBox" class="hidden bg-waxers-50 border border-waxers-200 rounded-xl p-4 mb-8">
+      <p class="text-sm text-slate-600">Send your Interac e-Transfer to:</p>
+      <p id="emtEmailDisplay" class="font-mono font-bold text-waxers-800 text-lg break-all"></p>
+      <p class="text-sm text-slate-600 mt-2">Your payment reference code:</p>
+      <p id="refCodeDisplay" class="font-mono font-bold text-waxers-800 text-lg"></p>
+      <p class="text-xs text-slate-500 mt-2">Include this reference code in your e-Transfer memo so your payment can be matched.</p>
+    </div>
+
+    <!-- Buyer details -->
+    <h3 class="font-bold mb-3">3. Your details</h3>
+    <div class="grid sm:grid-cols-2 gap-4 mb-8">
+      <div>
+        <label class="text-sm font-medium" for="buyerName">Full name *</label>
+        <input id="buyerName" type="text" class="mt-1 w-full border rounded-xl px-4 py-3" placeholder="Jane Doe" />
+      </div>
+      <div>
+        <label class="text-sm font-medium" for="buyerEmail">Email *</label>
+        <input id="buyerEmail" type="email" class="mt-1 w-full border rounded-xl px-4 py-3" placeholder="jane@example.com" />
+      </div>
+      <div class="sm:col-span-2">
+        <label class="text-sm font-medium" for="buyerPhone">Phone *</label>
+        <input id="buyerPhone" type="tel" class="mt-1 w-full border rounded-xl px-4 py-3" placeholder="416-555-0199" />
+      </div>
+    </div>
+
+    <!-- Consent -->
+    <label class="flex items-start gap-3 bg-slate-50 border rounded-xl p-4 mb-6 cursor-pointer">
+      <input id="consentCheck" type="checkbox" class="mt-1 w-5 h-5 accent-waxers-700" />
+      <span class="text-sm">
+        <strong>I agree to the raffle rules and confirm I am of legal age to participate. *</strong><br />
+        <span class="text-slate-500">Sample rules: open to Ontario residents 18+. Draw date to be announced. Winners notified by email/phone. All ticket sales are final and support Markham Waxers programming. Full official rules will be published before launch.</span>
+      </span>
+    </label>
+
+    <!-- Order summary -->
+    <div class="bg-waxers-950 text-white rounded-2xl p-6 mb-6">
+      <h3 class="font-bold mb-3">Order summary</h3>
+      <div class="flex justify-between text-sm mb-1"><span>Package</span><span id="sumPackage" class="font-medium">&mdash;</span></div>
+      <div class="flex justify-between text-sm mb-1"><span>Tickets</span><span id="sumQty" class="font-medium">&mdash;</span></div>
+      <div class="flex justify-between text-sm mb-3"><span>Supporting</span><span id="sumParticipant" class="font-medium text-right">&mdash;</span></div>
+      <div class="border-t border-white/20 pt-3 flex justify-between text-lg font-extrabold"><span>Total due via EMT</span><span id="sumTotal">$0.00</span></div>
+    </div>
+
+    <div id="formError" class="hidden bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 mb-4 text-sm"></div>
+
+    <button id="submitBtn" class="w-full bg-waxers-700 hover:bg-waxers-600 text-white font-bold text-lg rounded-2xl py-4 shadow-lg transition disabled:opacity-50">
+      Submit order
+    </button>
+    <p class="text-xs text-slate-400 text-center mt-3">You&rsquo;ll complete payment separately via Interac e-Transfer using the email and reference code above.</p>
+  </div>
+</section>
+
+<!-- ============ SUCCESS / RESULT PANEL ============ -->
+<section id="resultSection" class="hidden max-w-3xl mx-auto px-4 py-10">
+  <div id="resultCard" class="fade-in bg-white rounded-2xl shadow-xl p-8 text-center"></div>
+  <div class="text-center mt-6">
+    <button id="newOrderBtn" class="text-waxers-700 font-semibold underline">Start a new order</button>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer class="bg-waxers-950 text-waxers-200 text-center text-sm px-4 py-8 mt-10">
+  <p class="font-bold text-white">Markham Waxers &mdash; Community Raffle Fundraiser</p>
+  <p class="mt-1">Questions? Contact the fundraising committee. Sample page &mdash; official rules to be published.</p>
+</footer>
+
+<script>
+/* =====================================================================
+   CONFIG — edit these before launch
+   ===================================================================== */
+const CONFIG = {
+  // Paste your deployed Google Apps Script Web App "/exec" URL here.
+  // Leave empty to run in demo mode (orders will not be submitted).
+  APPS_SCRIPT_URL: "",
+
+  ORG_NAME: "Markham Waxers",
+  REF_CODE_PREFIX: "MW-EMT-",   // reference codes look like MW-EMT-4821
+  SINGLE_TICKET_PRICE: 10,      // price per ticket for custom quantities
+};
+
+/* ---------- SAMPLE DATA: replace with the real roster before launch.
+   Each entry needs the player/family display name and their own
+   Interac e-Transfer email address. The sheet tab is named after
+   `name`, exactly as written here. ---------- */
+const PARTICIPANTS = [
+  { name: "Player: Lucas Martinez (#10)",   emtEmail: "lucas.martinez@markhamwaxers-sample.ca" },
+  { name: "Player: Ethan Chen (#4)",        emtEmail: "ethan.chen@markhamwaxers-sample.ca" },
+  { name: "Player: Noah Tremblay (#22)",    emtEmail: "noah.tremblay@markhamwaxers-sample.ca" },
+  { name: "Player: Liam O'Connor (#7)",     emtEmail: "liam.oconnor@markhamwaxers-sample.ca" },
+  { name: "Player: Mason Patel (#13)",      emtEmail: "mason.patel@markhamwaxers-sample.ca" },
+  { name: "Family: The Nguyen Family",      emtEmail: "nguyen.family@markhamwaxers-sample.ca" },
+  { name: "Family: The Rossi Family",       emtEmail: "rossi.family@markhamwaxers-sample.ca" },
+  { name: "Family: The Kowalski Family",    emtEmail: "kowalski.family@markhamwaxers-sample.ca" },
+];
+
+/* ---------- SAMPLE DATA: replace with real prizes, descriptions,
+   values and image URLs before launch. ---------- */
+const PRIZES = [
+  { name: "Signed Team Jersey",        value: 250,  image: "https://placehold.co/800x500/122e5b/ffffff?text=Signed+Team+Jersey",
+    description: "Official Markham Waxers jersey signed by the full roster." },
+  { name: "Hockey Equipment Bundle",   value: 400,  image: "https://placehold.co/800x500/1f4f96/ffffff?text=Equipment+Bundle",
+    description: "Stick, gloves, bag and accessories — everything for next season." },
+  { name: "Weekend Getaway for Two",   value: 800,  image: "https://placehold.co/800x500/0c2145/ffffff?text=Weekend+Getaway",
+    description: "Two-night hotel stay plus dining gift card." },
+  { name: "Team Merch Prize Pack",     value: 150,  image: "https://placehold.co/800x500/2f66b3/ffffff?text=Merch+Pack",
+    description: "Hoodie, toque, scarf and more Waxers gear." },
+  { name: "Restaurant Gift Cards",     value: 200,  image: "https://placehold.co/800x500/173d76/ffffff?text=Gift+Cards",
+    description: "$200 in gift cards to local Markham restaurants." },
+  { name: "Grand Prize: $1,000 Cash",  value: 1000, image: "https://placehold.co/800x500/071633/ffd166?text=%241%2C000+Grand+Prize",
+    description: "The grand prize — $1,000 cash." },
+];
+
+const PACKAGES = [
+  { id: "single", label: "Single Ticket",        tickets: 1,  price: 10,  badge: "" },
+  { id: "bundle", label: "5-Ticket Bundle",     tickets: 5,  price: 40,  badge: "Most Popular" },
+  { id: "super",  label: "Super Pack — 15 Tickets", tickets: 15, price: 100, badge: "Best Value" },
+];
+
+/* =====================================================================
+   APP LOGIC
+   ===================================================================== */
+const state = {
+  packageId: "bundle",
+  customQty: 0,
+  participant: null,
+  refCode: "",
+};
+
+const $ = (id) => document.getElementById(id);
+
+function money(n) { return "$" + Number(n).toFixed(2); }
+
+/* ----- render prizes ----- */
+function renderPrizes() {
+  $("prizeGrid").innerHTML = PRIZES.map(p => `
+    <div class="bg-white rounded-2xl shadow overflow-hidden">
+      <img src="${p.image}" alt="${p.name}" class="w-full h-44 object-cover" loading="lazy" />
+      <div class="p-5">
+        <div class="flex items-start justify-between gap-2">
+          <h3 class="font-bold">${p.name}</h3>
+          <span class="shrink-0 bg-waxers-100 text-waxers-800 text-xs font-bold px-2 py-1 rounded-full">$${p.value} value</span>
+        </div>
+        <p class="text-sm text-slate-500 mt-1">${p.description}</p>
+      </div>
+    </div>`).join("");
+}
+
+/* ----- render packages ----- */
+function renderPackages() {
+  $("packageList").innerHTML = PACKAGES.map(p => `
+    <label class="package-card cursor-pointer">
+      <input type="radio" name="package" value="${p.id}" class="sr-only" ${state.packageId === p.id ? "checked" : ""} />
+      <div class="relative border-2 border-slate-200 rounded-2xl p-4 text-center transition h-full">
+        ${p.badge ? `<span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-400 text-amber-950 text-xs font-bold px-3 py-0.5 rounded-full whitespace-nowrap">${p.badge}</span>` : ""}
+        <div class="font-extrabold text-2xl text-waxers-800">${p.tickets}</div>
+        <div class="text-xs text-slate-500 uppercase tracking-wide">tickets</div>
+        <div class="font-bold mt-1">${money(p.price)}</div>
+        <div class="text-xs text-slate-500">${p.label}</div>
+      </div>
+    </label>`).join("");
+
+  document.querySelectorAll('input[name="package"]').forEach(r =>
+    r.addEventListener("change", () => {
+      state.packageId = r.value;
+      state.customQty = 0;
+      $("customQty").value = "";
+      updateSummary();
+    }));
+}
+
+/* ----- participants ----- */
+function renderParticipants() {
+  const sel = $("participantSelect");
+  PARTICIPANTS.forEach((p, i) => {
+    const opt = document.createElement("option");
+    opt.value = i;
+    opt.textContent = p.name;
+    sel.appendChild(opt);
+  });
+  sel.addEventListener("change", () => {
+    const idx = sel.value === "" ? -1 : Number(sel.value);
+    state.participant = idx >= 0 ? PARTICIPANTS[idx] : null;
+    if (state.participant) {
+      state.refCode = CONFIG.REF_CODE_PREFIX + Math.floor(1000 + Math.random() * 9000);
+      $("emtEmailDisplay").textContent = state.participant.emtEmail;
+      $("refCodeDisplay").textContent = state.refCode;
+      $("emtBox").classList.remove("hidden");
+    } else {
+      $("emtBox").classList.add("hidden");
+    }
+    updateSummary();
+  });
+}
+
+/* ----- order math ----- */
+function currentOrder() {
+  let pkgLabel, qty, total;
+  if (state.customQty > 0) {
+    pkgLabel = "Custom quantity";
+    qty = state.customQty;
+    total = qty * CONFIG.SINGLE_TICKET_PRICE;
+  } else {
+    const p = PACKAGES.find(x => x.id === state.packageId);
+    pkgLabel = p.label;
+    qty = p.tickets;
+    total = p.price;
+  }
+  return { pkgLabel, qty, total };
+}
+
+function updateSummary() {
+  const o = currentOrder();
+  $("sumPackage").textContent = o.pkgLabel;
+  $("sumQty").textContent = o.qty;
+  $("sumParticipant").textContent = state.participant ? state.participant.name : "—";
+  $("sumTotal").textContent = money(o.total);
+}
+
+/* ----- validation ----- */
+function validate() {
+  const errors = [];
+  const o = currentOrder();
+  if (o.qty < 1 || o.qty > 100) errors.push("Choose a ticket package or a custom quantity between 1 and 100.");
+  if (!state.participant) errors.push("Select a player or family to support.");
+  if (!$("buyerName").value.trim()) errors.push("Enter your full name.");
+  const email = $("buyerEmail").value.trim();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) errors.push("Enter a valid email address.");
+  if (!$("buyerPhone").value.trim()) errors.push("Enter your phone number.");
+  if (!$("consentCheck").checked) errors.push("You must accept the raffle rules and confirm legal age.");
+  return errors;
+}
+
+function showError(msgs) {
+  const box = $("formError");
+  box.innerHTML = msgs.map(m => `<div>&bull; ${m}</div>`).join("");
+  box.classList.remove("hidden");
+  box.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+/* ----- submit ----- */
+async function submitOrder() {
+  $("formError").classList.add("hidden");
+  const errors = validate();
+  if (errors.length) { showError(errors); return; }
+
+  if (!CONFIG.APPS_SCRIPT_URL) {
+    showError(["Demo mode: no Apps Script URL is configured. Set <code>CONFIG.APPS_SCRIPT_URL</code> in index.html before accepting real orders."]);
+    return;
+  }
+
+  const o = currentOrder();
+  const payload = {
+    timestamp: new Date().toISOString(),
+    buyerName: $("buyerName").value.trim(),
+    buyerEmail: $("buyerEmail").value.trim(),
+    buyerPhone: $("buyerPhone").value.trim(),
+    selectedParticipant: state.participant.name,
+    emtEmail: state.participant.emtEmail,
+    packageSelected: o.pkgLabel,
+    ticketCount: o.qty,
+    totalAmount: Number(o.total.toFixed(2)),
+    referenceCode: state.refCode,
+    termsAccepted: true,
+  };
+
+  const btn = $("submitBtn");
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Submitting&hellip;';
+
+  try {
+    // text/plain keeps this a CORS "simple request" for Apps Script endpoints
+    const res = await fetch(CONFIG.APPS_SCRIPT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (data.status !== "success") throw new Error(data.message || "Server returned an error.");
+    showSuccess(payload, data.tickets || []);
+  } catch (err) {
+    showError(["Could not submit your order: " + err.message + ". Please try again."]);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Submit order";
+  }
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function showSuccess(payload, tickets) {
+  const ticketList = tickets.length ? tickets.join(", ") : "(assigned — see your email receipt)";
+  $("resultCard").innerHTML = `
+    <div class="w-16 h-16 mx-auto rounded-full bg-green-100 flex items-center justify-center mb-4">
+      <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+    </div>
+    <h2 class="text-2xl font-extrabold mb-2">Order received!</h2>
+    <p class="text-slate-500 mb-6">Thanks, ${escapeHtml(payload.buyerName)} &mdash; your tickets are reserved.</p>
+    <div class="text-left bg-slate-50 border rounded-2xl p-5 mb-5 text-sm space-y-2">
+      <div class="flex justify-between"><span class="text-slate-500">Reference code</span><strong class="font-mono">${escapeHtml(payload.referenceCode)}</strong></div>
+      <div class="flex justify-between"><span class="text-slate-500">Supporting</span><strong>${escapeHtml(payload.selectedParticipant)}</strong></div>
+      <div class="flex justify-between"><span class="text-slate-500">Package</span><strong>${escapeHtml(payload.packageSelected)} (${payload.ticketCount} tickets)</strong></div>
+      <div class="flex justify-between text-base pt-2 border-t"><span class="text-slate-500">Total due via EMT</span><strong>${money(payload.totalAmount)}</strong></div>
+      <div class="pt-2 border-t"><span class="text-slate-500">Send Interac e-Transfer to</span><br/><strong class="font-mono break-all">${escapeHtml(payload.emtEmail)}</strong></div>
+      <div class="pt-2 border-t"><span class="text-slate-500">Your ticket numbers</span><br/><strong class="font-mono break-words">${escapeHtml(ticketList)}</strong></div>
+    </div>
+    <p class="text-sm text-slate-500">A receipt with these details was emailed to <strong>${escapeHtml(payload.buyerEmail)}</strong>.<br/>
+    Please complete your e-Transfer with the reference code in the memo &mdash; your tickets are confirmed once payment is verified.</p>`;
+  $("resultSection").classList.remove("hidden");
+  $("resultSection").scrollIntoView({ behavior: "smooth" });
+}
+
+/* ----- init ----- */
+$("customQty").addEventListener("input", (e) => {
+  const v = Math.max(0, Math.min(100, parseInt(e.target.value || "0", 10)));
+  state.customQty = v;
+  if (v > 0) {
+    document.querySelectorAll('input[name="package"]').forEach(r => { r.checked = false; });
+    state.packageId = "";
+  } else if (!state.packageId) {
+    state.packageId = "bundle";
+    document.querySelector('input[name="package"][value="bundle"]').checked = true;
+  }
+  updateSummary();
+});
+$("submitBtn").addEventListener("click", submitOrder);
+$("newOrderBtn").addEventListener("click", () => location.reload());
+
+renderPrizes();
+renderPackages();
+renderParticipants();
+updateSummary();
+</script>
+</body>
+</html>
