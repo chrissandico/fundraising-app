@@ -297,15 +297,19 @@ function getOrCreateParticipantSheet(ss, participantName) {
 
 function sendEmailReceipt(data) {
   var subject = CONFIG.ORG_NAME + " Raffle Confirmation — Ref " + data.referenceCode;
+  // Drop the "Family: " label prefix so the email reads naturally, e.g.
+  // "Thank you for supporting The Nguyen Family!" instead of
+  // "Thank you for supporting Family: The Nguyen Family!"
+  var participantDisplay = String(data.selectedParticipant).replace(/^Family:\s*/, "");
 
   var textBody =
     "Hi " + data.buyerName + ",\n\n" +
-    "Thank you for supporting " + data.selectedParticipant + "!\n\n" +
+    "Thank you for supporting " + participantDisplay + "!\n\n" +
     "ORDER DETAILS\n" +
     "  Package: " + data.packageSelected + " (" + data.ticketCount + " tickets)\n" +
     "  Total due via Interac e-Transfer: $" + Number(data.totalAmount).toFixed(2) + "\n" +
     "  Send e-Transfer to: " + data.emtEmail + "\n" +
-    "  Reference code: " + data.referenceCode + " (include this in your transfer memo)\n\n" +
+    "  Reference code: " + data.referenceCode + " (include this in your e-transfer memo)\n\n" +
     "YOUR TICKET NUMBERS\n" +
     "  " + data.assignedTickets.join(", ") + "\n\n" +
     "Please complete your e-Transfer using the reference code above. " +
@@ -315,13 +319,13 @@ function sendEmailReceipt(data) {
 
   var htmlBody =
     "<p>Hi " + esc(data.buyerName) + ",</p>" +
-    "<p>Thank you for supporting <strong>" + esc(data.selectedParticipant) + "</strong>!</p>" +
+    "<p>Thank you for supporting <strong>" + esc(participantDisplay) + "</strong>!</p>" +
     "<h3>Order details</h3>" +
     "<ul>" +
     "<li>Package: " + esc(data.packageSelected) + " (" + esc(data.ticketCount) + " tickets)</li>" +
     "<li>Total due via Interac e-Transfer: <strong>$" + Number(data.totalAmount).toFixed(2) + "</strong></li>" +
     "<li>Send e-Transfer to: <strong>" + esc(data.emtEmail) + "</strong></li>" +
-    "<li>Reference code: <strong>" + esc(data.referenceCode) + "</strong> (include this in your transfer memo)</li>" +
+    "<li>Reference code: <strong>" + esc(data.referenceCode) + "</strong> (include this in your e-transfer memo)</li>" +
     "</ul>" +
     "<h3>Your ticket numbers</h3>" +
     "<p><strong>" + esc(data.assignedTickets.join(", ")) + "</strong></p>" +
