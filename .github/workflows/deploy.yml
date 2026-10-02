@@ -1,0 +1,31 @@
+name: Deploy to Oracle Cloud
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up SSH Key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.OCI_SSH_KEY }}
+
+      - name: Add Remote Host to Known Hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.OCI_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy index.html to OCI Server
+        run: |
+          # Copy index.html to a temporary location, then move into the
+          # Nginx web root with sudo and reload Nginx.
+          scp index.html ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }}:~/index.html
+          ssh ${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }} "sudo cp ~/index.html /var/www/html/index.html && sudo systemctl reload nginx"
