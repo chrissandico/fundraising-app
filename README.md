@@ -21,16 +21,20 @@ placeholders. Swap in the real data before launch (see "Going live" below).
 ## How it works
 
 1. Buyer selects a package (Single $10 / 5 for $40 / 15 for $100 / custom qty at $10 each).
-2. Buyer selects a player/family → the page shows that person's Interac e-Transfer email and generates a payment reference code (`MW-EMT-XXXX`).
+2. Buyer selects a player/family → the page shows that person's Interac e-Transfer email.
 3. Buyer enters name, email, phone, accepts the legal terms, and submits.
 4. `index.html` POSTs the order JSON to the Apps Script Web App.
-5. Apps Script assigns the next sequential ticket numbers (lock-protected, gap-free), appends the row to the tab named after the player/family (creating it with headers if needed), and emails the buyer a receipt.
+5. Apps Script validates the participant against its own roster, recomputes the total server-side
+   (a mismatched client total is rejected), issues the next sequential ticket numbers plus a unique
+   payment reference code (`MW-EMT-1000`…) under one lock, appends the order to the master
+   **All Orders** tab and the player's tab, and emails the buyer a receipt. A retried submission
+   returns the original order instead of issuing duplicate tickets (idempotent).
 6. Families manually flip `EMT Status (Manual)` to verified once the e-Transfer lands in their bank account.
 
 ## Going live — checklist
 
-- [ ] **Backend:** follow `docs/apps-script-setup.md`, paste the `/exec` URL into `CONFIG.APPS_SCRIPT_URL` in `index.html`.
-- [ ] **Roster:** replace the sample `PARTICIPANTS` array with real names + Interac e-Transfer emails. Tab names in the sheet match `name` exactly.
+- [ ] **Backend:** follow `docs/apps-script-setup.md`, paste the `/exec` URL into `CONFIG.APPS_SCRIPT_URL` in `index.html`. After any future edit to `Code.gs`, redeploy as a **New version** (Deploy → Manage deployments) or changes won't go live.
+- [ ] **Roster:** replace the sample `PARTICIPANTS` array with real names + Interac e-Transfer emails **in both `index.html` and `Code.gs`** (the server copy is authoritative — keep the names identical). Tab names in the sheet match `name` exactly.
 - [ ] **Prizes:** replace the sample `PRIZES` array with real names, descriptions, values, and image URLs.
 - [ ] **Rules:** update the consent text with the official raffle rules and draw date.
 - [ ] **Server:** follow `docs/oci-setup.md` — create the VM, install Nginx, add the three repo secrets (`OCI_HOST`, `OCI_USER`, `OCI_SSH_KEY`).
