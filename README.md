@@ -33,6 +33,8 @@ placeholders. Swap in the real data before launch (see "Going live" below).
 
 ## Going live — checklist
 
+Full step-by-step runbook: `docs/launch-runbook.md` (sheet + backend, server, auto-deploy, real data, testing).
+
 - [ ] **Backend:** follow `docs/apps-script-setup.md`, paste the `/exec` URL into `CONFIG.APPS_SCRIPT_URL` in `index.html`. After any future edit to `Code.gs`, redeploy as a **New version** (Deploy → Manage deployments) or changes won't go live.
 - [ ] **Roster:** replace the sample `PARTICIPANTS` array with real names + Interac e-Transfer emails **in both `index.html` and `Code.gs`** (the server copy is authoritative — keep the names identical). Tab names in the sheet match `name` exactly.
 - [ ] **Prizes:** replace the sample `PRIZES` array with real names, descriptions, values, and image URLs.
