@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Markham Waxers &mdash; Community Raffle Fundraiser</title>
+<title>Markham Waxers U13A &mdash; Community Raffle Fundraiser</title>
 <link rel="icon" href="https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/waxers-logo.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -59,10 +59,10 @@
 <header class="relative overflow-hidden bg-gradient-to-b from-white via-sky-50 to-waxers-100">
   <div class="absolute inset-0 hero-stripes"></div>
   <div class="relative max-w-6xl mx-auto px-4 pt-12 pb-14 sm:pt-16 sm:pb-20 text-center">
-    <img src="https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/waxers-logo.png" alt="Markham Waxers logo" class="h-40 sm:h-52 w-auto mx-auto mb-7 drop-shadow-xl" />
+    <img src="https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/waxers-logo.png" alt="Markham Waxers U13A logo" class="h-40 sm:h-52 w-auto mx-auto mb-7 drop-shadow-xl" />
     <p class="text-amber-600 font-bold tracking-[0.3em] text-xs sm:text-sm mb-4">COMMUNITY FUNDRAISER</p>
-    <h1 class="font-display text-5xl sm:text-7xl font-black tracking-tight leading-[0.95] text-waxers-950">Markham Waxers<br />Raffle</h1>
-    <p class="mt-5 text-slate-600 text-lg max-w-2xl mx-auto">Support your favourite player or family &mdash; every ticket helps fund the season. Winners drawn live at season&rsquo;s end.</p>
+    <h1 class="font-display text-5xl sm:text-7xl font-black tracking-tight leading-[0.95] text-waxers-950">Markham Waxers U13A<br />Raffle</h1>
+    <p class="mt-5 text-slate-600 text-lg max-w-2xl mx-auto">Support the Markham Waxers U13A team &mdash; every ticket helps fund the season. Winners drawn live at season&rsquo;s end.</p>
     <div class="mt-7 flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-sm text-slate-600">
       <span><strong id="statPrizeCount" class="text-waxers-950 font-extrabold text-base">&ndash;</strong> prizes</span>
       <span class="hidden sm:inline text-slate-300">&bull;</span>
@@ -102,9 +102,10 @@
     </div>
 
     <!-- Participant -->
-    <h3 class="font-bold mb-3">2. Choose a player or family to support</h3>
+    <h3 class="font-bold mb-3">2. Who is your sales rep?</h3>
+    <p class="text-sm text-slate-500 mb-3">Your purchase supports the Markham Waxers U13A team. Select the family or player who sold you the tickets so they get credit.</p>
     <select id="participantSelect" class="w-full border rounded-xl px-4 py-3 mb-3 bg-white">
-      <option value="">-- Select a player / family --</option>
+      <option value="">-- Select your sales rep --</option>
     </select>
     <div id="emtBox" class="hidden bg-waxers-50 border border-waxers-200 rounded-xl p-4 mb-8">
       <p class="text-sm text-slate-600">Send your Interac e-Transfer to:</p>
@@ -134,7 +135,7 @@
       <input id="consentCheck" type="checkbox" class="mt-1 w-5 h-5 accent-waxers-700" />
       <span class="text-sm">
         <strong>I agree to the raffle rules and confirm I am of legal age to participate. *</strong><br />
-        <span class="text-slate-500">Sample rules: open to Ontario residents 18+. Draw date to be announced. Winners notified by email/phone. All ticket sales are final and support Markham Waxers programming. Full official rules will be published before launch.</span>
+        <span class="text-slate-500">Sample rules: open to Ontario residents 18+. Draw date to be announced. Winners notified by email/phone. All ticket sales are final and support Markham Waxers U13A programming. Full official rules will be published before launch.</span>
       </span>
     </label>
 
@@ -143,7 +144,7 @@
       <h3 class="font-bold mb-3">Order summary</h3>
       <div class="flex justify-between text-sm mb-1"><span>Package</span><span id="sumPackage" class="font-medium">&mdash;</span></div>
       <div class="flex justify-between text-sm mb-1"><span>Tickets</span><span id="sumQty" class="font-medium">&mdash;</span></div>
-      <div class="flex justify-between text-sm mb-3"><span>Supporting</span><span id="sumParticipant" class="font-medium text-right">&mdash;</span></div>
+      <div class="flex justify-between text-sm mb-3"><span>Sales rep</span><span id="sumParticipant" class="font-medium text-right">&mdash;</span></div>
       <div class="border-t border-white/20 pt-3 flex justify-between text-lg font-extrabold"><span>Total due via EMT</span><span id="sumTotal" class="text-amber-400">$0.00</span></div>
     </div>
 
@@ -166,8 +167,8 @@
 
 <!-- ============ FOOTER ============ -->
 <footer class="bg-white border-t border-slate-200 text-slate-500 text-center text-sm px-4 py-10 mt-10">
-  <img src="https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/waxers-logo.png" alt="Markham Waxers logo" class="h-16 w-auto mx-auto mb-4" />
-  <p class="font-bold text-waxers-950">Markham Waxers &mdash; Community Raffle Fundraiser</p>
+  <img src="https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/waxers-logo.png" alt="Markham Waxers U13A logo" class="h-16 w-auto mx-auto mb-4" />
+  <p class="font-bold text-waxers-950">Markham Waxers U13A &mdash; Community Raffle Fundraiser</p>
   <p class="mt-1">Questions? Contact the fundraising committee. Sample page &mdash; official rules to be published.</p>
 </footer>
 
@@ -180,14 +181,14 @@ const CONFIG = {
   // Leave empty to run in demo mode (orders will not be submitted).
   APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbyVl8eDaySYOq__X-QWr-6p1Q9X3I40ZTf7fU7ADGN_4N-H_2GcO6R2bkFzVBuMrgUO/exec",
 
-  ORG_NAME: "Markham Waxers",
+  ORG_NAME: "Markham Waxers U13A",
   SINGLE_TICKET_PRICE: 10,      // price per ticket for custom quantities
   // NOTE: reference codes are issued by the Apps Script backend (unique and
   // sequential) — the page no longer generates them.
 };
 
 /* ---------- SAMPLE DATA: replace with the real roster before launch.
-   Each entry needs the player/family display name and their own
+   Each entry needs the sales rep display name (family or player) and their own
    Interac e-Transfer email address. The sheet tab is named after
    `name`, exactly as written here. ---------- */
 const PARTICIPANTS = [
@@ -204,7 +205,7 @@ const PARTICIPANTS = [
 /* ---------- SAMPLE DATA: replace with real prizes, descriptions,
    values and image URLs before launch. ---------- */
 const PRIZES = [
-  { name: "Signed Markham Waxers Team Jersey", value: 250,  image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/prize1.jpg",
+  { name: "Signed Markham Waxers U13A Team Jersey", value: 250,  image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/prize1.jpg",
     description: "Official Waxers jersey signed by the full roster — a collector's keepsake." },
   { name: "Pro Hockey Equipment Bundle",       value: 400,  image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/prize2.jpg",
     description: "Top-tier stick, gloves, and gear bag to get you rink-ready." },
@@ -330,7 +331,7 @@ function validate() {
   const errors = [];
   const o = currentOrder();
   if (o.qty < 1 || o.qty > 100) errors.push("Choose a ticket package or a custom quantity between 1 and 100.");
-  if (!state.participant) errors.push("Select a player or family to support.");
+  if (!state.participant) errors.push("Select your sales rep.");
   if (!$("buyerName").value.trim()) errors.push("Enter your full name.");
   const email = $("buyerEmail").value.trim();
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) errors.push("Enter a valid email address.");
@@ -423,7 +424,7 @@ function showSuccess(payload, data) {
     <p class="text-slate-500 mb-6">Thanks, ${escapeHtml(payload.buyerName)} &mdash; your tickets are reserved.</p>
     <div class="text-left bg-slate-50 border rounded-2xl p-5 mb-5 text-sm space-y-2">
       <div class="flex justify-between"><span class="text-slate-500">Reference code</span><strong class="font-mono">${escapeHtml(refCode)}</strong></div>
-      <div class="flex justify-between"><span class="text-slate-500">Supporting</span><strong>${escapeHtml(payload.selectedParticipant)}</strong></div>
+      <div class="flex justify-between"><span class="text-slate-500">Sales rep</span><strong>${escapeHtml(payload.selectedParticipant)}</strong></div>
       <div class="flex justify-between"><span class="text-slate-500">Package</span><strong>${escapeHtml(payload.packageSelected)} (${payload.ticketCount} tickets)</strong></div>
       <div class="flex justify-between text-base pt-2 border-t"><span class="text-slate-500">Total due via EMT</span><strong>${money(payload.totalAmount)}</strong></div>
       <div class="pt-2 border-t"><span class="text-slate-500">Send Interac e-Transfer to</span><br/><strong class="font-mono break-all">${escapeHtml(state.participant.emtEmail)}</strong></div>
