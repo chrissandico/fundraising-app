@@ -52,7 +52,7 @@
 
 <!-- ============ DEMO / SAMPLE DATA BANNER ============ -->
 <div class="bg-amber-400 text-amber-950 text-center text-sm font-semibold px-4 py-2">
-  Sample data preview: prizes and the player/family list are placeholders &mdash; the real roster still needs to be added before launch.
+  Sample data preview: the sales rep list still uses sample names and emails &mdash; the real roster will be added before launch.
 </div>
 
 <!-- ============ HEADER ============ -->
@@ -80,7 +80,7 @@
   <p class="text-center text-amber-600 font-bold tracking-[0.3em] text-xs mb-3">PRIZES</p>
   <h2 class="font-display text-3xl sm:text-4xl font-black text-center tracking-tight">What you could win</h2>
   <p class="text-center text-slate-500 mt-3 mb-10">Every ticket is entered into the draw for all prizes below.</p>
-  <div id="prizeGrid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+  <div id="prizeGrid"></div>
 </section>
 
 <!-- ============ TICKET PURCHASE ============ -->
@@ -170,6 +170,7 @@
   <img src="https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/waxers-logo.png" alt="Markham Waxers U13A logo" class="h-16 w-auto mx-auto mb-4" />
   <p class="font-bold text-waxers-950">Markham Waxers U13A &mdash; Community Raffle Fundraiser</p>
   <p class="mt-1">Questions? Contact the fundraising committee. Sample page &mdash; official rules to be published.</p>
+  <p class="mt-1 text-xs text-slate-400">Prize photos are stock imagery shown for illustration.</p>
 </footer>
 
 <script>
@@ -205,18 +206,45 @@ const PARTICIPANTS = [
 /* ---------- SAMPLE DATA: replace with real prizes, descriptions,
    values and image URLs before launch. ---------- */
 const PRIZES = [
-  { name: "Signed Markham Waxers U13A Team Jersey", value: 250,  image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/prize1.jpg",
-    description: "Official Waxers jersey signed by the full roster — a collector's keepsake." },
-  { name: "Pro Hockey Equipment Bundle",       value: 400,  image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/prize2.jpg",
-    description: "Top-tier stick, gloves, and gear bag to get you rink-ready." },
-  { name: "Weekend Getaway for Two",           value: 800,  image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/prize3.jpg",
-    description: "Two nights in a luxury hotel — pack your bags and relax." },
-  { name: "Waxers Merch Prize Pack",           value: 150,  image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/prize4.jpg",
-    description: "Hoodie, toque, and scarf — rep the Waxers in style." },
-  { name: "Local Restaurant Gift Cards",       value: 200,  image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/prize5.jpg",
-    description: "$200 to spend at Markham's favourite restaurants." },
-  { name: "Grand Prize: $1,000 Cash",          value: 1000, image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/prize6.jpg",
-    description: "The big one — cold, hard cash." },
+  { name: "Ultimate Leafs Experience", category: "Grand Prizes", value: null,
+    image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/leafs-flames.jpg",
+    description: "Two tickets to see the Toronto Maple Leafs vs. Calgary Flames &mdash; Tuesday, January 26 at 7:00 PM." },
+  { name: "Hockey Night in Toronto", category: "Grand Prizes", value: null,
+    image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/leafs-jets.jpg",
+    description: "Two tickets to see the Toronto Maple Leafs vs. Winnipeg Jets &mdash; Monday, January 11 at 7:30 PM." },
+  { name: "Raptors Night Out", category: "Grand Prizes", value: null,
+    image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/raptors.jpg",
+    description: "Toronto Raptors game tickets &mdash; catch the action live from the stands." },
+  { name: "Ultimate Tech Package", category: "Grand Prizes", value: null,
+    image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/tech-package.jpg",
+    description: "A Samsung smartphone plus a Lenovo headset &mdash; the full tech upgrade." },
+  { name: "McDavid Fan Favourite", category: "Exclusive Hockey Collectibles", value: null,
+    image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/mcdavid-jersey.jpg",
+    description: "A Connor McDavid hockey jersey &mdash; a must-have for any fan's collection." },
+  { name: "NHLPA Autographed Collector's Package", category: "Exclusive Hockey Collectibles", value: null,
+    image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/autographed-package.jpg",
+    description: "Drew Doughty autographed 8x10 photo with NHLPA Certificate of Authenticity, plus an NHLPA hat and T-shirt." },
+  { name: "Weekend Warrior Package", category: "Shopping, Family Fun & Lifestyle", value: null,
+    image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/weekend-warrior.jpg",
+    description: "A chainsaw plus a $100 Canadian Tire gift card &mdash; everything you need to tackle the yard." },
+  { name: "Foodie Shopping Spree", category: "Shopping, Family Fun & Lifestyle", value: 200,
+    image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/foodie-spree.jpg",
+    description: "A $200 T&amp;T Supermarket gift card &mdash; stock up on all your favourites." },
+  { name: "Ultimate Family Adventure", category: "Shopping, Family Fun & Lifestyle", value: null,
+    image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/family-adventure.jpg",
+    description: "A 3-month Taekwondo membership, 2 trekking passes, a family mini golf pass, and a $100 swimming gift certificate." },
+  { name: "Shop Till You Drop", category: "Shopping, Family Fun & Lifestyle", value: 225,
+    image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/shop-till-you-drop.jpg",
+    description: "A $100 Amazon gift card, a $100 Walmart gift card, and a $25 Mastercard gift card." },
+  { name: "Pamper &amp; Unwind", category: "Shopping, Family Fun & Lifestyle", value: null,
+    image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/pamper-unwind.jpg",
+    description: "A haircut gift certificate plus a $50 LCBO gift card &mdash; relax and recharge." },
+  { name: "Celebrate in Style", category: "Shopping, Family Fun & Lifestyle", value: 200,
+    image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/celebrate-style.jpg",
+    description: "$200 in LCBO gift cards &mdash; raise a glass, on us." },
+  { name: "Cheers to the Weekend", category: "Shopping, Family Fun & Lifestyle", value: 200,
+    image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/cheers-weekend.jpg",
+    description: "$200 in LCBO gift cards &mdash; your weekend, upgraded." },
 ];
 
 const PACKAGES = [
@@ -239,22 +267,37 @@ const $ = (id) => document.getElementById(id);
 function money(n) { return "$" + Number(n).toFixed(2); }
 
 /* ----- render prizes ----- */
-function renderPrizes() {
-  const maxValue = Math.max(...PRIZES.map(p => p.value));
-  $("prizeGrid").innerHTML = PRIZES.map(p => `
+const PRIZE_CATEGORIES = ["Grand Prizes", "Exclusive Hockey Collectibles", "Shopping, Family Fun & Lifestyle"];
+
+function prizeCard(p) {
+  return `
     <div class="group bg-white rounded-2xl shadow overflow-hidden hover:shadow-xl hover:-translate-y-1 transition duration-300 ring-1 ring-slate-100">
       <div class="relative overflow-hidden">
         <img src="${p.image}" alt="${p.name}" class="w-full h-52 object-cover group-hover:scale-105 transition duration-500" loading="lazy" />
-        ${p.value === maxValue ? `<span class="absolute top-3 left-3 bg-amber-400 text-amber-950 text-xs font-black uppercase tracking-wider px-3 py-1 rounded-full shadow-lg">Grand prize</span>` : ""}
       </div>
       <div class="p-5">
         <div class="flex items-start justify-between gap-2">
           <h3 class="font-display font-bold">${p.name}</h3>
-          <span class="shrink-0 bg-waxers-100 text-waxers-800 text-xs font-bold px-2 py-1 rounded-full">$${p.value} value</span>
+          ${p.value ? `<span class="shrink-0 bg-waxers-100 text-waxers-800 text-xs font-bold px-2 py-1 rounded-full">$${p.value} value</span>` : ""}
         </div>
         <p class="text-sm text-slate-500 mt-1">${p.description}</p>
       </div>
-    </div>`).join("");
+    </div>`;
+}
+
+function renderPrizes() {
+  $("prizeGrid").innerHTML = PRIZE_CATEGORIES.map(cat => {
+    const items = PRIZES.filter(p => p.category === cat);
+    if (!items.length) return "";
+    return `
+    <div class="mt-12 first:mt-0">
+      <div class="flex items-center gap-4 mb-6">
+        <h3 class="font-display text-xl sm:text-2xl font-black tracking-tight text-waxers-950 whitespace-nowrap">${cat}</h3>
+        <div class="h-0.5 flex-1 bg-gradient-to-r from-amber-400 to-transparent rounded"></div>
+      </div>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">${items.map(prizeCard).join("")}</div>
+    </div>`;
+  }).join("");
 }
 
 /* ----- render packages ----- */
@@ -458,7 +501,8 @@ updateSummary();
 
 // Hero stats, computed from the prize list
 $("statPrizeCount").textContent = PRIZES.length;
-$("statTotalValue").textContent = "$" + PRIZES.reduce((s, p) => s + p.value, 0).toLocaleString();
+const knownTotal = PRIZES.reduce((s, p) => s + (p.value || 0), 0);
+$("statTotalValue").textContent = "$" + knownTotal.toLocaleString() + (PRIZES.some(p => !p.value) ? "+" : "");
 </script>
 </body>
 </html>
