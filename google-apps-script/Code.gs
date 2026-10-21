@@ -39,6 +39,7 @@ var CONFIG = {
   REF_COUNTER_START: 1000,             // first reference code will be MW-EMT-1000
   ORG_NAME: "Markham Waxers",
   MASTER_SHEET_NAME: "All Orders",
+  ROSTER_SHEET_NAME: "Roster",
   SINGLE_TICKET_PRICE: 10,             // price per ticket for custom quantities
   PACKAGE_PRICES: { 1: 10, 5: 40, 15: 100 },  // must match PACKAGES in index.html
   SHEET_HEADERS: [
@@ -55,20 +56,42 @@ var CONFIG = {
 };
 
 /* ---------- PARTICIPANT ROSTER — server-side source of truth ----------
-   Replace with the real roster before launch. The keys must match the
-   `name` values in the PARTICIPANTS array in index.html exactly.
-   Orders naming anyone not listed here are rejected, and the EMT email
-   used everywhere comes from this roster — never from the client. */
-var PARTICIPANTS = {
-  "Player: Lucas Martinez (#10)": "lucas.martinez@markhamwaxers-sample.ca",
-  "Player: Ethan Chen (#4)":      "ethan.chen@markhamwaxers-sample.ca",
-  "Player: Noah Tremblay (#22)":  "noah.tremblay@markhamwaxers-sample.ca",
-  "Player: Liam O'Connor (#7)":   "liam.oconnor@markhamwaxers-sample.ca",
-  "Player: Mason Patel (#13)":    "mason.patel@markhamwaxers-sample.ca",
-  "Family: The Nguyen Family":    "nguyen.family@markhamwaxers-sample.ca",
-  "Family: The Rossi Family":      "rossi.family@markhamwaxers-sample.ca",
-  "Family: The Kowalski Family":   "kowalski.family@markhamwaxers-sample.ca"
-};
+   PARTICIPANT_NAMES must match the `name` values in the PARTICIPANTS array
+   in index.html exactly. Orders naming anyone not listed here are rejected.
+
+   EMT email addresses deliberately do NOT live in this file (or anywhere
+   in the public repo / web page). They live in the "Roster" tab of this
+   spreadsheet — row 1 headers "Participant" | "EMT Email", one row per
+   sales rep — which only the fundraising organizers can see. getEmtEmail()
+   reads that tab at order time, so email changes take effect immediately
+   with no redeploy. A participant with no row (or a blank email) is
+   treated as "family contacts the buyer directly": the confirmation screen
+   and the receipt email tell the buyer the family will reach out to
+   arrange payment, and the order is flagged accordingly in the sheet.
+   Display format is first name + last initial (Prof's call, Oct 2026).
+   "Waxers Player 15–17" are placeholders for families who haven't
+   submitted an EMT email; with no Roster row they automatically get the
+   contact-directly flow. When a family checks in, rename their placeholder
+   here, in index.html, and in the Roster tab — all three must match. */
+var PARTICIPANT_NAMES = [
+  "Christian B.",
+  "Tyler B.",
+  "Theodore C.",
+  "Konstantinos G.",
+  "Alexander L.",
+  "Jerry L.",
+  "Jonathan L.",
+  "Ian M.",
+  "Xavier M.",
+  "Callum O.",
+  "Joshua O.",
+  "Preston S.",
+  "Wilson W.",
+  "Benny Y.",
+  "Waxers Player 15",
+  "Waxers Player 16",
+  "Waxers Player 17"
+];
 
 /** Health check — open the /exec URL in a browser, you should see this. */
 function doGet() {
@@ -90,14 +113,13 @@ function doPost(e) {
     var data = JSON.parse(e.postData.contents);
     validatePayload(data);
 
-    // The roster is authoritative: reject unknown participants and use the
-    // roster's EMT email, never one supplied by the client.
+    // The roster of names is authoritative: reject unknown participants.
+    // The EMT email is looked up from the spreadsheet's Roster tab below —
+    // never from anything the client sends.
     var participantName = String(data.selectedParticipant);
-    var emtEmail = PARTICIPANTS[participantName];
-    if (!emtEmail) {
+    if (PARTICIPANT_NAMES.indexOf(participantName) === -1) {
       throw new Error("Unknown participant. Please refresh the page and try again.");
     }
-    data.emtEmail = emtEmail;
 
     // Recompute the total server-side; the client's number must match exactly.
     var qty = Number(data.ticketCount);
@@ -110,6 +132,11 @@ function doPost(e) {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var master = getOrCreateMasterSheet(ss);
 
+    // "" means the family has no EMT email on file — the buyer is told the
+    // family will contact them directly to arrange payment.
+    var emtEmail = getEmtEmail(ss, participantName);
+    data.emtEmail = emtEmail;
+
     // Idempotency: a retried submission (double-click, network retry) returns
     // the original result instead of issuing new tickets.
     var clientOrderId = String(data.clientOrderId);
@@ -120,6 +147,8 @@ function doPost(e) {
         tickets: existing.tickets,
         referenceCode: existing.refCode,
         emailSent: existing.emailSent,
+        emtEmail: emtEmail || null,
+        paymentMethod: emtEmail ? "emt" : "contact",
         duplicate: true
       });
     }
@@ -140,6 +169,7 @@ function doPost(e) {
 
     var timestamp = String(data.timestamp);
     var ticketList = allocation.tickets.join(", ");
+    var payStatus = emtEmail ? "Pending Verification" : "Family to contact buyer";
 
     master.appendRow([
       timestamp,
@@ -152,7 +182,7 @@ function doPost(e) {
       expectedTotal,
       allocation.refCode,
       ticketList,
-      "Pending Verification",   // families update this manually after EMT lands
+      payStatus,   // families update this manually once payment lands
       clientOrderId,
       emailSent ? "Yes" : "No"
     ]);
@@ -168,14 +198,16 @@ function doPost(e) {
       expectedTotal,
       allocation.refCode,
       ticketList,
-      "Pending Verification"
+      payStatus
     ]);
 
     return jsonResponse({
       status: "success",
       tickets: allocation.tickets,
       referenceCode: allocation.refCode,
-      emailSent: emailSent
+      emailSent: emailSent,
+      emtEmail: emtEmail || null,
+      paymentMethod: emtEmail ? "emt" : "contact"
     });
   } catch (err) {
     return jsonResponse({ status: "error", message: String(err && err.message || err) });
@@ -293,6 +325,24 @@ function getOrCreateParticipantSheet(ss, participantName) {
   return sheet;
 }
 
+/* ---------------- roster EMT lookup ----------------
+ * Reads the spreadsheet's "Roster" tab (row 1 headers, then one row per
+ * sales rep: Participant | EMT Email). Returns "" when the tab is missing,
+ * the participant has no row, or the email cell is blank — all of which
+ * mean "the family contacts the buyer directly to arrange payment".
+ */
+function getEmtEmail(ss, participantName) {
+  var sheet = ss.getSheetByName(CONFIG.ROSTER_SHEET_NAME);
+  if (!sheet || sheet.getLastRow() < 2) return "";
+  var values = sheet.getRange(2, 1, sheet.getLastRow() - 1, 2).getValues();
+  for (var i = 0; i < values.length; i++) {
+    if (String(values[i][0]).trim() === participantName) {
+      return String(values[i][1]).trim();
+    }
+  }
+  return "";
+}
+
 /* ---------------- email receipt ---------------- */
 
 function sendEmailReceipt(data) {
@@ -302,20 +352,43 @@ function sendEmailReceipt(data) {
   // "Thank you for supporting Family: The Nguyen Family!"
   var participantDisplay = String(data.selectedParticipant).replace(/^Family:\s*/, "");
 
+  var hasEmt = !!data.emtEmail;
+  var totalStr = "$" + Number(data.totalAmount).toFixed(2);
+  var paymentText = hasEmt
+    ? "  Total due via Interac e-Transfer: " + totalStr + "\n" +
+      "  Send e-Transfer to: " + data.emtEmail + "\n" +
+      "  Reference code: " + data.referenceCode + " (include this in your e-transfer memo)\n"
+    : "  Total due: " + totalStr + "\n" +
+      "  Reference code: " + data.referenceCode + "\n" +
+      "  Payment: " + participantDisplay + " will contact you directly to arrange payment \u2014 no e-Transfer is needed right now.\n";
+  var closingText = hasEmt
+    ? "Please complete your e-Transfer using the reference code above. " +
+      "Your tickets are confirmed once payment is verified.\n\n"
+    : "Your tickets are confirmed once payment has been arranged with " + participantDisplay + ".\n\n";
+
   var textBody =
     "Hi " + data.buyerName + ",\n\n" +
     "Thank you for supporting " + participantDisplay + "!\n\n" +
     "ORDER DETAILS\n" +
     "  Package: " + data.packageSelected + " (" + data.ticketCount + " tickets)\n" +
-    "  Total due via Interac e-Transfer: $" + Number(data.totalAmount).toFixed(2) + "\n" +
-    "  Send e-Transfer to: " + data.emtEmail + "\n" +
-    "  Reference code: " + data.referenceCode + " (include this in your e-transfer memo)\n\n" +
+    paymentText + "\n" +
     "YOUR TICKET NUMBERS\n" +
     "  " + data.assignedTickets.join(", ") + "\n\n" +
-    "Please complete your e-Transfer using the reference code above. " +
-    "Your tickets are confirmed once payment is verified.\n\n" +
+    closingText +
     "Good luck!\n" +
     CONFIG.ORG_NAME + " Fundraising Committee";
+
+  var paymentHtml = hasEmt
+    ? "<li>Total due via Interac e-Transfer: <strong>" + totalStr + "</strong></li>" +
+      "<li>Send e-Transfer to: <strong>" + esc(data.emtEmail) + "</strong></li>" +
+      "<li>Reference code: <strong>" + esc(data.referenceCode) + "</strong> (include this in your e-transfer memo)</li>"
+    : "<li>Total due: <strong>" + totalStr + "</strong></li>" +
+      "<li>Reference code: <strong>" + esc(data.referenceCode) + "</strong></li>" +
+      "<li>Payment: <strong>" + esc(participantDisplay) + " will contact you directly to arrange payment</strong> \u2014 no e-Transfer is needed right now.</li>";
+  var closingHtml = hasEmt
+    ? "<p>Please complete your e-Transfer using the reference code above. " +
+      "Your tickets are confirmed once payment is verified.</p>"
+    : "<p>Your tickets are confirmed once payment has been arranged with " + esc(participantDisplay) + ".</p>";
 
   var htmlBody =
     "<p>Hi " + esc(data.buyerName) + ",</p>" +
@@ -323,14 +396,11 @@ function sendEmailReceipt(data) {
     "<h3>Order details</h3>" +
     "<ul>" +
     "<li>Package: " + esc(data.packageSelected) + " (" + esc(data.ticketCount) + " tickets)</li>" +
-    "<li>Total due via Interac e-Transfer: <strong>$" + Number(data.totalAmount).toFixed(2) + "</strong></li>" +
-    "<li>Send e-Transfer to: <strong>" + esc(data.emtEmail) + "</strong></li>" +
-    "<li>Reference code: <strong>" + esc(data.referenceCode) + "</strong> (include this in your e-transfer memo)</li>" +
+    paymentHtml +
     "</ul>" +
     "<h3>Your ticket numbers</h3>" +
     "<p><strong>" + esc(data.assignedTickets.join(", ")) + "</strong></p>" +
-    "<p>Please complete your e-Transfer using the reference code above. " +
-    "Your tickets are confirmed once payment is verified.</p>" +
+    closingHtml +
     "<p>Good luck!<br/>" + esc(CONFIG.ORG_NAME) + " Fundraising Committee</p>";
 
   GmailApp.sendEmail(data.buyerEmail, subject, textBody, { htmlBody: htmlBody, name: CONFIG.ORG_NAME + " Raffle" });

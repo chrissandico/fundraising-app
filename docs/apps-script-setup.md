@@ -69,3 +69,18 @@ orders to. You only need a Google account and a Google Sheet. Takes about 10 min
   the `EMT Status (Manual)` column in their tab.
 - If you ever edit `Code.gs`, redeploy with **Deploy → Manage deployments → Edit → New version**
   so the live `/exec` URL picks up the changes.
+
+## Updating the roster & EMT emails
+
+- **Sales rep names** live in two places that must match exactly: the `PARTICIPANTS`
+  array in `index.html` and `PARTICIPANT_NAMES` in `Code.gs`. After changing names in
+  `Code.gs`, redeploy (**Deploy → Manage deployments → Edit → New version**).
+- **EMT email addresses** live ONLY in the spreadsheet: a tab named `Roster` with
+  `Participant` | `EMT Email` headers in row 1 and one row per sales rep below.
+  Names must match the dropdown exactly. The addresses are never published on the
+  website or in this repo — the backend reads the tab at order time, so email-only
+  changes take effect immediately with no redeploy.
+- A sales rep with **no row (or a blank email)** is treated as "family contacts the
+  buyer directly": the confirmation screen and the receipt email tell the buyer the
+  family will reach out to arrange payment, and the order is flagged
+  `Family to contact buyer` in the sheet.

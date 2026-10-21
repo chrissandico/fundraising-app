@@ -51,11 +51,6 @@
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased">
 
-<!-- ============ DEMO / SAMPLE DATA BANNER ============ -->
-<div class="bg-amber-400 text-amber-950 text-center text-sm font-semibold px-4 py-2">
-  Sample data preview: the sales rep list still uses sample names and emails &mdash; the real roster will be added before launch.
-</div>
-
 <!-- ============ HEADER ============ -->
 <header class="relative overflow-hidden bg-gradient-to-b from-white via-sky-50 to-waxers-100">
   <div class="absolute inset-0 hero-stripes"></div>
@@ -109,9 +104,7 @@
       <option value="">-- Select your sales rep --</option>
     </select>
     <div id="emtBox" class="hidden bg-waxers-50 border border-waxers-200 rounded-xl p-4 mb-8">
-      <p class="text-sm text-slate-600">Send your Interac e-Transfer to:</p>
-      <p id="emtEmailDisplay" class="font-mono font-bold text-waxers-800 text-lg break-all"></p>
-      <p class="text-xs text-slate-500 mt-3">After you submit, you'll get a payment reference code — include it in your e-Transfer memo so your payment can be matched.</p>
+      <p class="text-sm text-slate-600">Your sales rep will be listed on your order confirmation — most families take payment by Interac e-Transfer, and a few arrange payment with buyers directly. Either way, submit your order and we'll let you know exactly how to pay.</p>
     </div>
 
     <!-- Buyer details -->
@@ -171,7 +164,7 @@
   <img src="https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/waxers-logo.png" alt="Markham Waxers U13A logo" class="h-16 w-auto mx-auto mb-4" />
   <p class="font-bold text-waxers-950">Markham Waxers U13A &mdash; Community Raffle Fundraiser</p>
   <p class="mt-1">Questions? Contact the fundraising committee. Sample page &mdash; official rules to be published.</p>
-  <p class="mt-1 text-xs text-slate-400">Prize photos are stock imagery shown for illustration.</p>
+  <p class="mt-1 text-xs text-slate-400">Some prize photos are stock imagery shown for illustration.</p>
 </footer>
 
 <script>
@@ -189,23 +182,39 @@ const CONFIG = {
   // sequential) — the page no longer generates them.
 };
 
-/* ---------- SAMPLE DATA: replace with the real roster before launch.
-   Each entry needs the sales rep display name (family or player) and their own
-   Interac e-Transfer email address. The sheet tab is named after
-   `name`, exactly as written here. ---------- */
+/* ---------- REAL ROSTER (team EMT form responses, Oct 2026).
+   Names only, on purpose: the families' e-Transfer email addresses are NOT
+   published on this page or in this repo. The backend looks each rep's email
+   up in the spreadsheet's private "Roster" tab at order time and returns the
+   payment instructions with the order result. A rep with no email on file
+   triggers the "family will contact you directly" payment flow instead.
+   Names must match PARTICIPANT_NAMES in google-apps-script/Code.gs exactly.
+   Display format is first name + last initial (Prof's call, Oct 2026 — the
+   form-response PDF truncated the surnames anyway). "Waxers Player 15–17"
+   are placeholders for families who haven't submitted an EMT email: with no
+   email on file they get the contact-directly payment flow. ---------- */
 const PARTICIPANTS = [
-  { name: "Player: Lucas Martinez (#10)",   emtEmail: "lucas.martinez@markhamwaxers-sample.ca" },
-  { name: "Player: Ethan Chen (#4)",        emtEmail: "ethan.chen@markhamwaxers-sample.ca" },
-  { name: "Player: Noah Tremblay (#22)",    emtEmail: "noah.tremblay@markhamwaxers-sample.ca" },
-  { name: "Player: Liam O'Connor (#7)",     emtEmail: "liam.oconnor@markhamwaxers-sample.ca" },
-  { name: "Player: Mason Patel (#13)",      emtEmail: "mason.patel@markhamwaxers-sample.ca" },
-  { name: "Family: The Nguyen Family",      emtEmail: "nguyen.family@markhamwaxers-sample.ca" },
-  { name: "Family: The Rossi Family",       emtEmail: "rossi.family@markhamwaxers-sample.ca" },
-  { name: "Family: The Kowalski Family",    emtEmail: "kowalski.family@markhamwaxers-sample.ca" },
+  { name: "Christian B." },
+  { name: "Tyler B." },
+  { name: "Theodore C." },
+  { name: "Konstantinos G." },
+  { name: "Alexander L." },
+  { name: "Jerry L." },
+  { name: "Jonathan L." },
+  { name: "Ian M." },
+  { name: "Xavier M." },
+  { name: "Callum O." },
+  { name: "Joshua O." },
+  { name: "Preston S." },
+  { name: "Wilson W." },
+  { name: "Benny Y." },
+  { name: "Waxers Player 15" },
+  { name: "Waxers Player 16" },
+  { name: "Waxers Player 17" },
 ];
 
-/* ---------- SAMPLE DATA: replace with real prizes, descriptions,
-   values and image URLs before launch. ---------- */
+/* ---------- The 14 real prizes (confirmed Oct 2026). `value` is the stated
+   dollar value where one is known; null = no stated value. ---------- */
 const PRIZES = [
   { name: "Ultimate Leafs Experience", category: "Grand Prizes", value: null,
     image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/leafs-flames.jpg",
@@ -246,6 +255,9 @@ const PRIZES = [
   { name: "Cheers to the Weekend", category: "Shopping, Family Fun & Lifestyle", value: 200,
     image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/cheers-weekend.jpg",
     description: "$200 in LCBO gift cards &mdash; your weekend, upgraded." },
+  { name: "Joyride 150 Day Pass", category: "Shopping, Family Fun & Lifestyle", value: null,
+    image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/joyride-150.jpg",
+    description: "One free day pass to Joyride 150 Indoor Bike Park &mdash; and the Joyride 150 water bottle in the photo is yours to keep." },
 ];
 
 const PACKAGES = [
@@ -355,7 +367,6 @@ function renderParticipants() {
     const idx = sel.value === "" ? -1 : Number(sel.value);
     state.participant = idx >= 0 ? PARTICIPANTS[idx] : null;
     if (state.participant) {
-      $("emtEmailDisplay").textContent = state.participant.emtEmail;
       $("emtBox").classList.remove("hidden");
     } else {
       $("emtBox").classList.add("hidden");
@@ -474,6 +485,11 @@ function showSuccess(payload, data) {
     ? `<p class="mt-4 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">We couldn't email your receipt &mdash; but your tickets above are reserved. Contact the fundraising committee if you need a copy.</p>`
     : `<p class="text-sm text-slate-500">A receipt with these details was emailed to <strong>${escapeHtml(payload.buyerEmail)}</strong>.<br/>
     Please complete your e-Transfer with the reference code in the memo &mdash; your tickets are confirmed once payment is verified.</p>`;
+  const payRow = data.emtEmail
+    ? `<div class="pt-2 border-t"><span class="text-slate-500">Total due via Interac e-Transfer &mdash; send to</span><br/><strong class="font-mono break-all">${escapeHtml(data.emtEmail)}</strong><br/><span class="text-xs text-slate-500">Include your reference code <strong class="font-mono">${escapeHtml(refCode)}</strong> in the e-Transfer memo so your payment can be matched.</span></div>`
+    : (data.paymentMethod === "contact"
+      ? `<div class="pt-2 border-t"><span class="text-slate-500">Payment</span><br/><strong>${escapeHtml(payload.selectedParticipant)} will contact you directly to arrange payment of ${money(payload.totalAmount)}.</strong><br/><span class="text-xs text-slate-500">No e-Transfer is needed right now &mdash; please keep your reference code handy.</span></div>`
+      : `<div class="pt-2 border-t"><span class="text-slate-500">Payment</span><br/><strong>Your receipt email has your payment instructions.</strong></div>`);
   const dupNote = data.duplicate
     ? `<p class="text-xs text-slate-400 mb-4">This looks like a resubmission &mdash; showing your original order, no duplicate tickets were issued.</p>`
     : "";
@@ -488,8 +504,8 @@ function showSuccess(payload, data) {
       <div class="flex justify-between"><span class="text-slate-500">Reference code</span><strong class="font-mono">${escapeHtml(refCode)}</strong></div>
       <div class="flex justify-between"><span class="text-slate-500">Sales rep</span><strong>${escapeHtml(payload.selectedParticipant)}</strong></div>
       <div class="flex justify-between"><span class="text-slate-500">Package</span><strong>${escapeHtml(payload.packageSelected)} (${payload.ticketCount} tickets)</strong></div>
-      <div class="flex justify-between text-base pt-2 border-t"><span class="text-slate-500">Total due via EMT</span><strong>${money(payload.totalAmount)}</strong></div>
-      <div class="pt-2 border-t"><span class="text-slate-500">Send Interac e-Transfer to</span><br/><strong class="font-mono break-all">${escapeHtml(state.participant.emtEmail)}</strong></div>
+      <div class="flex justify-between text-base pt-2 border-t"><span class="text-slate-500">Total due</span><strong>${money(payload.totalAmount)}</strong></div>
+      ${payRow}
       <div class="pt-2 border-t"><span class="text-slate-500">Your ticket numbers</span><br/><strong class="font-mono break-words">${escapeHtml(ticketList)}</strong></div>
     </div>
     ${emailNote}`;
