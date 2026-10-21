@@ -81,7 +81,7 @@
 
 <!-- ============ TICKET PURCHASE ============ -->
 <section id="tickets" class="bg-white border-y border-slate-200 scroll-mt-2">
-  <div class="max-w-3xl mx-auto px-4 py-14">
+  <div class="max-w-3xl mx-auto px-4 pt-14 pb-28 lg:pb-14">
 
     <p class="text-center text-amber-600 font-bold tracking-[0.3em] text-xs mb-3">TICKETS</p>
     <h2 class="font-display text-3xl sm:text-4xl font-black text-center tracking-tight mb-10">Get your tickets</h2>
@@ -89,6 +89,7 @@
     <!-- Packages -->
     <h3 class="font-bold mb-3">1. Choose a package</h3>
     <div id="packageList" class="grid sm:grid-cols-3 gap-4 mb-4"></div>
+    <p id="err-package" class="hidden text-sm text-red-600 mb-4"></p>
 
     <div class="flex items-center gap-3 bg-slate-50 border rounded-xl px-4 py-3 mb-8">
       <label for="customQty" class="text-sm font-medium whitespace-nowrap">Or custom quantity:</label>
@@ -103,6 +104,7 @@
     <select id="participantSelect" class="w-full border rounded-xl px-4 py-3 mb-3 bg-white">
       <option value="">-- Select your sales rep --</option>
     </select>
+    <p id="err-participant" class="hidden text-sm text-red-600 mb-3"></p>
     <div id="emtBox" class="hidden bg-waxers-50 border border-waxers-200 rounded-xl p-4 mb-8">
       <p class="text-sm text-slate-600">Your sales rep will be listed on your order confirmation — most families take payment by Interac e-Transfer, and a few arrange payment with buyers directly. Either way, submit your order and we'll let you know exactly how to pay.</p>
     </div>
@@ -112,26 +114,32 @@
     <div class="grid sm:grid-cols-2 gap-4 mb-8">
       <div>
         <label class="text-sm font-medium" for="buyerName">Full name *</label>
-        <input id="buyerName" type="text" class="mt-1 w-full border rounded-xl px-4 py-3" placeholder="Jane Doe" />
+        <input id="buyerName" type="text" autocomplete="name" class="mt-1 w-full border rounded-xl px-4 py-3" placeholder="Jane Doe" />
+        <p id="err-buyerName" class="hidden text-sm text-red-600 mt-1"></p>
       </div>
       <div>
         <label class="text-sm font-medium" for="buyerEmail">Email *</label>
-        <input id="buyerEmail" type="email" class="mt-1 w-full border rounded-xl px-4 py-3" placeholder="jane@example.com" />
+        <input id="buyerEmail" type="email" autocomplete="email" inputmode="email" class="mt-1 w-full border rounded-xl px-4 py-3" placeholder="jane@example.com" />
+        <p id="err-buyerEmail" class="hidden text-sm text-red-600 mt-1"></p>
+        <p id="emailHint" class="hidden text-sm text-amber-700 mt-1"></p>
       </div>
       <div class="sm:col-span-2">
         <label class="text-sm font-medium" for="buyerPhone">Phone *</label>
-        <input id="buyerPhone" type="tel" class="mt-1 w-full border rounded-xl px-4 py-3" placeholder="416-555-0199" />
+        <input id="buyerPhone" type="tel" autocomplete="tel" inputmode="tel" class="mt-1 w-full border rounded-xl px-4 py-3" placeholder="416-555-0199" />
+        <p id="err-buyerPhone" class="hidden text-sm text-red-600 mt-1"></p>
       </div>
     </div>
 
     <!-- Consent -->
-    <label class="flex items-start gap-3 bg-slate-50 border rounded-xl p-4 mb-6 cursor-pointer">
+    <label id="consentLabel" class="flex items-start gap-3 bg-slate-50 border rounded-xl p-4 mb-6 cursor-pointer">
       <input id="consentCheck" type="checkbox" class="mt-1 w-5 h-5 accent-waxers-700" />
       <span class="text-sm">
         <strong>I agree to the raffle rules and confirm I am of legal age to participate. *</strong><br />
         <span class="text-slate-500">Sample rules: open to Ontario residents 18+. Draw date to be announced. Winners notified by email/phone. All ticket sales are final and support Markham Waxers U13A programming. Full official rules will be published before launch.</span>
       </span>
     </label>
+
+    <p id="err-consent" class="hidden text-sm text-red-600 -mt-4 mb-6"></p>
 
     <!-- Order summary -->
     <div class="bg-waxers-950 text-white rounded-2xl p-6 mb-6">
@@ -150,6 +158,17 @@
     <p class="text-xs text-slate-400 text-center mt-3">You&rsquo;ll complete payment separately via Interac e-Transfer using the email and reference code above.</p>
   </div>
 </section>
+
+<!-- ============ STICKY MOBILE ORDER BAR ============ -->
+<div id="stickyBar" class="fixed bottom-0 inset-x-0 z-40 lg:hidden bg-waxers-950/95 backdrop-blur text-white shadow-[0_-4px_24px_rgba(7,22,51,0.35)]">
+  <div class="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
+    <div class="flex-1 min-w-0">
+      <div id="barPackage" class="text-[11px] uppercase tracking-wider text-waxers-200 truncate">&mdash;</div>
+      <div id="barTotal" class="font-display font-extrabold text-xl leading-tight text-amber-400">$0.00</div>
+    </div>
+    <button id="barSubmitBtn" class="bg-amber-400 hover:bg-amber-300 text-amber-950 font-display font-extrabold uppercase tracking-wide rounded-xl px-6 py-3 shadow-lg transition disabled:opacity-50">Submit order</button>
+  </div>
+</div>
 
 <!-- ============ SUCCESS / RESULT PANEL ============ -->
 <section id="resultSection" class="hidden max-w-3xl mx-auto px-4 py-10">
@@ -342,6 +361,7 @@ function renderPackages() {
         <div class="text-xs text-slate-500 uppercase tracking-wide">tickets</div>
         <div class="font-bold mt-1">${money(p.price)}</div>
         <div class="text-xs text-slate-500">${p.label}</div>
+        <div class="text-xs text-slate-400 mt-0.5">${money(p.price / p.tickets)} per ticket</div>
       </div>
     </label>`).join("");
 
@@ -349,6 +369,7 @@ function renderPackages() {
     r.addEventListener("change", () => {
       state.packageId = r.value;
       state.customQty = 0;
+      $("err-package").classList.add("hidden");
       $("customQty").value = "";
       updateSummary();
     }));
@@ -366,6 +387,8 @@ function renderParticipants() {
   sel.addEventListener("change", () => {
     const idx = sel.value === "" ? -1 : Number(sel.value);
     state.participant = idx >= 0 ? PARTICIPANTS[idx] : null;
+    $("err-participant").classList.add("hidden");
+    sel.classList.remove("border-red-400", "ring-1", "ring-red-300");
     if (state.participant) {
       $("emtBox").classList.remove("hidden");
     } else {
@@ -397,20 +420,71 @@ function updateSummary() {
   $("sumQty").textContent = o.qty;
   $("sumParticipant").textContent = state.participant ? state.participant.name : "—";
   $("sumTotal").textContent = money(o.total);
+  $("barPackage").textContent = o.pkgLabel;
+  $("barTotal").textContent = money(o.total);
 }
 
 /* ----- validation ----- */
+const EMAIL_TYPOS = { "gmail.con": "gmail.com", "gmail.cm": "gmail.com", "gamil.com": "gmail.com", "gmial.com": "gmail.com", "hotmail.con": "hotmail.com", "hotmal.com": "hotmail.com", "yahoo.con": "yahoo.com", "yaho.com": "yahoo.com", "outlook.con": "outlook.com", "rogers.con": "rogers.com", "icloud.con": "icloud.com" };
+
+function updateEmailHint() {
+  const inp = $("buyerEmail");
+  const hint = $("emailHint");
+  const v = inp.value.trim();
+  const m = v.match(/^([^@\s]+)@([^@\s]+)$/);
+  let suggestion = "";
+  if (m) {
+    const dom = m[2].toLowerCase();
+    if (EMAIL_TYPOS[dom]) suggestion = m[1] + "@" + EMAIL_TYPOS[dom];
+    else if (dom.endsWith(".con")) suggestion = m[1] + "@" + dom.slice(0, -3) + "com";
+    else if (dom.endsWith(".cm")) suggestion = m[1] + "@" + dom.slice(0, -2) + "com";
+  }
+  if (suggestion && suggestion.toLowerCase() !== v.toLowerCase()) {
+    hint.innerHTML = `Did you mean <button type="button" id="emailFix" class="underline font-semibold">${escapeHtml(suggestion)}</button>?`;
+    hint.classList.remove("hidden");
+    $("emailFix").addEventListener("click", () => { inp.value = suggestion; hint.classList.add("hidden"); });
+  } else {
+    hint.classList.add("hidden");
+  }
+}
+
 function validate() {
-  const errors = [];
+  const bad = [];
+  const flag = (input, errId, msg) => {
+    const e = $(errId);
+    if (msg) {
+      e.textContent = msg;
+      e.classList.remove("hidden");
+      if (input) {
+        input.classList.add("border-red-400", "ring-1", "ring-red-300");
+        bad.push(input);
+      }
+    } else {
+      e.classList.add("hidden");
+      if (input) input.classList.remove("border-red-400", "ring-1", "ring-red-300");
+    }
+  };
   const o = currentOrder();
-  if (o.qty < 1 || o.qty > 100) errors.push("Choose a ticket package or a custom quantity between 1 and 100.");
-  if (!state.participant) errors.push("Select your sales rep.");
-  if (!$("buyerName").value.trim()) errors.push("Enter your full name.");
+  const qtyBad = o.qty < 1 || o.qty > 100;
+  flag(null, "err-package", qtyBad ? "Choose a ticket package or a custom quantity between 1 and 100." : "");
+  if (qtyBad) bad.push($("packageList"));
+  flag($("participantSelect"), "err-participant", !state.participant ? "Select your sales rep." : "");
+  flag($("buyerName"), "err-buyerName", !$("buyerName").value.trim() ? "Enter your full name." : "");
   const email = $("buyerEmail").value.trim();
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) errors.push("Enter a valid email address.");
-  if (!$("buyerPhone").value.trim()) errors.push("Enter your phone number.");
-  if (!$("consentCheck").checked) errors.push("You must accept the raffle rules and confirm legal age.");
-  return errors;
+  flag($("buyerEmail"), "err-buyerEmail", !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) ? "Enter a valid email address." : "");
+  flag($("buyerPhone"), "err-buyerPhone", !$("buyerPhone").value.trim() ? "Enter your phone number." : "");
+  const consentBad = !$("consentCheck").checked;
+  flag(null, "err-consent", consentBad ? "You must accept the raffle rules and confirm legal age." : "");
+  $("consentLabel").classList.toggle("ring-1", consentBad);
+  $("consentLabel").classList.toggle("ring-red-300", consentBad);
+  $("consentLabel").classList.toggle("border-red-300", consentBad);
+  if (consentBad) bad.push($("consentLabel"));
+  updateEmailHint();
+  if (bad.length) {
+    bad[0].scrollIntoView({ behavior: "smooth", block: "center" });
+    return false;
+  }
+  return true;
 }
 
 function showError(msgs) {
@@ -423,8 +497,7 @@ function showError(msgs) {
 /* ----- submit ----- */
 async function submitOrder() {
   $("formError").classList.add("hidden");
-  const errors = validate();
-  if (errors.length) { showError(errors); return; }
+  if (!validate()) return;
 
   if (!CONFIG.APPS_SCRIPT_URL) {
     showError(["Demo mode: no Apps Script URL is configured. Set <code>CONFIG.APPS_SCRIPT_URL</code> in index.html before accepting real orders."]);
@@ -452,8 +525,11 @@ async function submitOrder() {
   };
 
   const btn = $("submitBtn");
+  const barBtn = $("barSubmitBtn");
   btn.disabled = true;
+  barBtn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Submitting&hellip;';
+  barBtn.textContent = "Submitting\u2026";
 
   try {
     // text/plain keeps this a CORS "simple request" for Apps Script endpoints
@@ -469,7 +545,9 @@ async function submitOrder() {
     showError(["Could not submit your order: " + err.message + ". Please try again."]);
   } finally {
     btn.disabled = false;
+    barBtn.disabled = false;
     btn.textContent = "Submit order";
+    barBtn.textContent = "Submit order";
   }
 }
 
@@ -478,6 +556,7 @@ function escapeHtml(s) {
 }
 
 function showSuccess(payload, data) {
+  $("stickyBar").classList.add("hidden");
   const tickets = data.tickets || [];
   const refCode = data.referenceCode || "";
   const ticketList = tickets.length ? tickets.join(", ") : "(assigned — see your email receipt)";
@@ -493,6 +572,10 @@ function showSuccess(payload, data) {
   const dupNote = data.duplicate
     ? `<p class="text-xs text-slate-400 mb-4">This looks like a resubmission &mdash; showing your original order, no duplicate tickets were issued.</p>`
     : "";
+  const copyText = data.emtEmail
+    ? ["Markham Waxers U13A Raffle \u2014 payment details", "Send Interac e-Transfer to: " + data.emtEmail, "Amount: " + money(payload.totalAmount), "Memo (reference code): " + refCode].join("\n")
+    : ["Markham Waxers U13A Raffle \u2014 order " + refCode, "Sales rep: " + payload.selectedParticipant, "Total due: " + money(payload.totalAmount) + " (" + payload.selectedParticipant + " will contact you to arrange payment)", "Tickets: " + ticketList].join("\n");
+  const copyBtn = `<button id="copyPayBtn" class="mt-5 bg-waxers-700 hover:bg-waxers-600 text-white font-semibold rounded-xl px-5 py-3 transition">${data.emtEmail ? "Copy payment details" : "Copy order details"}</button>`;
   $("resultCard").innerHTML = `
     <div class="w-16 h-16 mx-auto rounded-full bg-green-100 flex items-center justify-center mb-4">
       <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
@@ -508,13 +591,30 @@ function showSuccess(payload, data) {
       ${payRow}
       <div class="pt-2 border-t"><span class="text-slate-500">Your ticket numbers</span><br/><strong class="font-mono break-words">${escapeHtml(ticketList)}</strong></div>
     </div>
-    ${emailNote}`;
+    ${emailNote}
+    ${copyBtn}`;
   $("resultSection").classList.remove("hidden");
   $("resultSection").scrollIntoView({ behavior: "smooth" });
+  const cpBtn = $("copyPayBtn");
+  if (cpBtn) cpBtn.addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText(copyText); }
+    catch (e) {
+      const ta = document.createElement("textarea");
+      ta.value = copyText;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+    }
+    const orig = cpBtn.textContent;
+    cpBtn.textContent = "Copied \u2713";
+    setTimeout(() => { cpBtn.textContent = orig; }, 2000);
+  });
 }
 
 /* ----- init ----- */
 $("customQty").addEventListener("input", (e) => {
+  $("err-package").classList.add("hidden");
   const v = Math.max(0, Math.min(100, parseInt(e.target.value || "0", 10)));
   state.customQty = v;
   if (v > 0) {
@@ -527,6 +627,18 @@ $("customQty").addEventListener("input", (e) => {
   updateSummary();
 });
 $("submitBtn").addEventListener("click", submitOrder);
+$("barSubmitBtn").addEventListener("click", submitOrder);
+["buyerName", "buyerEmail", "buyerPhone"].forEach(id => $(id).addEventListener("input", () => {
+  $("err-" + id).classList.add("hidden");
+  $(id).classList.remove("border-red-400", "ring-1", "ring-red-300");
+}));
+$("buyerEmail").addEventListener("blur", updateEmailHint);
+$("consentCheck").addEventListener("change", () => {
+  if ($("consentCheck").checked) {
+    $("err-consent").classList.add("hidden");
+    $("consentLabel").classList.remove("ring-1", "ring-red-300", "border-red-300");
+  }
+});
 $("newOrderBtn").addEventListener("click", () => location.reload());
 
 renderPrizes();
@@ -539,5 +651,6 @@ $("statPrizeCount").textContent = PRIZES.length;
 const knownTotal = PRIZES.reduce((s, p) => s + (p.value || 0), 0);
 $("statTotalValue").textContent = "$" + knownTotal.toLocaleString() + (PRIZES.some(p => !p.value) ? "+" : "");
 </script>
+<div class="h-20 lg:hidden"></div>
 </body>
 </html>
