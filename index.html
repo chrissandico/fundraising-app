@@ -43,6 +43,8 @@
   ::selection { background: #fbbf24; color: #071633; }
   .hero-stripes { background-image: repeating-linear-gradient(-45deg, rgba(12,33,69,0.05) 0 2px, transparent 2px 16px); }
   .card-stripes { background-image: repeating-linear-gradient(-45deg, rgba(255,255,255,0.045) 0 2px, transparent 2px 16px); }
+  .sheet-card { max-height: 92vh; max-height: 92dvh; }
+  #sheetBody { overscroll-behavior: contain; }
   .fade-in { animation: fadeIn .4s ease-in; }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(8px);} to { opacity: 1; transform: none;} }
   .spinner { border: 3px solid #d9e7f6; border-top: 3px solid #1f4f96; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; vertical-align: -4px; }
@@ -81,13 +83,13 @@
 
 <!-- ============ TICKET PURCHASE ============ -->
 <section id="tickets" class="card-stripes bg-waxers-950 scroll-mt-2">
-  <div class="max-w-3xl mx-auto px-4 pt-14 pb-28 lg:pb-14">
+  <div class="max-w-3xl mx-auto px-4 pt-14 pb-14">
 
     <p class="text-center text-amber-400 font-bold tracking-[0.3em] text-xs mb-3">TICKETS</p>
     <h2 class="font-display text-3xl sm:text-4xl font-black text-center tracking-tight text-white mb-10">Get your tickets</h2>
 
     <!-- C — Gold Frame: the form card floats on the navy stage -->
-    <div class="bg-gradient-to-br from-amber-500 via-amber-200 to-waxers-500 rounded-[26px] p-[5px] shadow-2xl">
+    <div id="formCard" class="bg-gradient-to-br from-amber-500 via-amber-200 to-waxers-500 rounded-[26px] p-[5px] shadow-2xl">
       <div class="bg-white rounded-[21px] px-4 py-6 sm:px-8 sm:py-8">
 
     <!-- Packages -->
@@ -166,13 +168,13 @@
 </section>
 
 <!-- ============ STICKY MOBILE ORDER BAR ============ -->
-<div id="stickyBar" class="fixed bottom-0 inset-x-0 z-40 lg:hidden bg-waxers-950/95 backdrop-blur text-white shadow-[0_-4px_24px_rgba(7,22,51,0.35)]">
+<div id="stickyBar" class="fixed bottom-0 inset-x-0 z-40 bg-waxers-950/95 backdrop-blur text-white shadow-[0_-4px_24px_rgba(7,22,51,0.35)]">
   <div class="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
     <div class="flex-1 min-w-0">
       <div id="barPackage" class="text-[11px] uppercase tracking-wider text-waxers-200 truncate">&mdash;</div>
       <div id="barTotal" class="font-display font-extrabold text-xl leading-tight text-amber-400">$0.00</div>
     </div>
-    <button id="barSubmitBtn" class="bg-amber-400 hover:bg-amber-300 text-amber-950 font-display font-extrabold uppercase tracking-wide rounded-xl px-6 py-3 shadow-lg transition disabled:opacity-50">Submit order</button>
+    <button id="barSubmitBtn" class="bg-amber-400 hover:bg-amber-300 text-amber-950 font-display font-extrabold uppercase tracking-wide rounded-xl px-6 py-3 shadow-lg transition disabled:opacity-50">Get tickets</button>
   </div>
 </div>
 
@@ -500,6 +502,47 @@ function showError(msgs) {
   box.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
+/* ----- sticky bar modes + slide-up form sheet -----
+   The bar has two modes: away from the form its button opens the form in a
+   slide-up sheet ("Get tickets"); when the form section is on screen the
+   button submits ("Submit order"). The sheet holds the actual form card —
+   the node is moved in on open and back on close, so there is only ever
+   one set of fields. */
+let barSubmitMode = false;
+let sheetOpen = false;
+const formCardEl = $("formCard");
+const formHome = { parent: formCardEl.parentNode, next: formCardEl.nextSibling };
+
+function syncBarButton() {
+  $("barSubmitBtn").textContent = barSubmitMode ? "Submit order" : "Get tickets";
+}
+function setBarMode(submit) {
+  barSubmitMode = submit;
+  syncBarButton();
+}
+function openSheet() {
+  if (sheetOpen) return;
+  sheetOpen = true;
+  $("sheetBody").appendChild(formCardEl);
+  $("formSheet").classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+  $("stickyBar").classList.add("hidden");
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    $("sheetBackdrop").classList.remove("opacity-0");
+    $("sheetPanel").classList.remove("translate-y-full");
+  }));
+}
+function closeSheet() {
+  if (!sheetOpen) return;
+  sheetOpen = false;
+  $("sheetBackdrop").classList.add("opacity-0");
+  $("sheetPanel").classList.add("translate-y-full");
+  document.body.style.overflow = "";
+  formHome.parent.insertBefore(formCardEl, formHome.next);
+  if ($("resultSection").classList.contains("hidden")) $("stickyBar").classList.remove("hidden");
+  setTimeout(() => { if (!sheetOpen) $("formSheet").classList.add("hidden"); }, 320);
+}
+
 /* ----- submit ----- */
 async function submitOrder() {
   $("formError").classList.add("hidden");
@@ -553,7 +596,7 @@ async function submitOrder() {
     btn.disabled = false;
     barBtn.disabled = false;
     btn.textContent = "Submit order";
-    barBtn.textContent = "Submit order";
+    syncBarButton();
   }
 }
 
@@ -562,6 +605,7 @@ function escapeHtml(s) {
 }
 
 function showSuccess(payload, data) {
+  closeSheet();
   $("stickyBar").classList.add("hidden");
   const tickets = data.tickets || [];
   const refCode = data.referenceCode || "";
@@ -633,7 +677,12 @@ $("customQty").addEventListener("input", (e) => {
   updateSummary();
 });
 $("submitBtn").addEventListener("click", submitOrder);
-$("barSubmitBtn").addEventListener("click", submitOrder);
+$("barSubmitBtn").addEventListener("click", () => { if (barSubmitMode) submitOrder(); else openSheet(); });
+$("sheetClose").addEventListener("click", closeSheet);
+$("sheetBackdrop").addEventListener("click", closeSheet);
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeSheet(); });
+new IntersectionObserver(es => es.forEach(e => { if (!sheetOpen) setBarMode(e.isIntersecting); }), { rootMargin: "-40% 0px -40% 0px" }).observe($("tickets"));
+syncBarButton();
 ["buyerName", "buyerEmail", "buyerPhone"].forEach(id => $(id).addEventListener("input", () => {
   $("err-" + id).classList.add("hidden");
   $(id).classList.remove("border-red-400", "ring-1", "ring-red-300");
@@ -657,6 +706,24 @@ $("statPrizeCount").textContent = PRIZES.length;
 const knownTotal = PRIZES.reduce((s, p) => s + (p.value || 0), 0);
 $("statTotalValue").textContent = "$" + knownTotal.toLocaleString() + (PRIZES.some(p => !p.value) ? "+" : "");
 </script>
-<div class="h-20 lg:hidden"></div>
+<div class="h-20"></div>
+<!-- ============ SLIDE-UP FORM SHEET ============ -->
+<div id="formSheet" class="fixed inset-0 z-50 hidden">
+  <div id="sheetBackdrop" class="absolute inset-0 bg-waxers-950/80 opacity-0 transition-opacity duration-300"></div>
+  <div id="sheetPanel" class="absolute inset-x-0 bottom-0 md:max-w-3xl md:mx-auto translate-y-full transition-transform duration-300 ease-out">
+    <div class="sheet-card bg-white rounded-t-[26px] shadow-2xl flex flex-col overflow-hidden">
+      <div class="flex items-center justify-between bg-waxers-950 text-white px-5 py-4 shrink-0">
+        <div>
+          <div class="text-[10px] font-bold tracking-[0.3em] text-amber-400">MARKHAM WAXERS U13A</div>
+          <div class="font-display font-black text-lg leading-tight">Get your tickets</div>
+        </div>
+        <button id="sheetClose" type="button" aria-label="Close" class="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <div id="sheetBody" class="overflow-y-auto bg-slate-100 p-3 sm:p-5"></div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
