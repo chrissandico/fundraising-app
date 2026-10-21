@@ -291,7 +291,7 @@ function prizeCard(p) {
     return `
     <div class="group card-stripes bg-waxers-950 rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl hover:-translate-y-1 transition duration-300 ring-1 ring-waxers-800 h-full">
       <div class="relative overflow-hidden border-b-4 border-amber-400">
-        <img src="${p.image}" alt="${p.name}" class="w-full h-52 object-cover group-hover:scale-105 transition duration-500" loading="lazy" />
+        <img src="${p.image}" alt="${p.name}" class="w-full aspect-[3/2] object-cover group-hover:scale-105 transition duration-500" loading="lazy" />
         ${pill}
       </div>
       <div class="p-5">
@@ -305,7 +305,7 @@ function prizeCard(p) {
   <div class="group bg-gradient-to-br from-amber-500 via-amber-200 to-waxers-500 rounded-[26px] p-[5px] shadow-xl hover:shadow-2xl hover:-translate-y-1 transition duration-300 h-full">
     <div class="bg-white rounded-[21px] overflow-hidden h-full">
       <div class="relative overflow-hidden">
-        <img src="${p.image}" alt="${p.name}" class="w-full h-52 object-cover group-hover:scale-105 transition duration-500" loading="lazy" />
+        <img src="${p.image}" alt="${p.name}" class="w-full aspect-[3/2] object-cover group-hover:scale-105 transition duration-500" loading="lazy" />
         ${pill}
       </div>
       <div class="p-5">
