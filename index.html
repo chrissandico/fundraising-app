@@ -215,9 +215,9 @@ const CONFIG = {
    triggers the "family will contact you directly" payment flow instead.
    Names must match PARTICIPANT_NAMES in google-apps-script/Code.gs exactly.
    Display format is first name + last initial (Prof's call, Oct 2026 — the
-   form-response PDF truncated the surnames anyway). "Waxers Player 15–17"
-   are placeholders for families who haven't submitted an EMT email: with no
-   email on file they get the contact-directly payment flow. ---------- */
+   form-response PDF truncated the surnames anyway). Reps whose Roster-tab
+   email is blank (currently Brandon J. and Mike C.) get the
+   contact-directly payment flow. ---------- */
 const PARTICIPANTS = [
   { name: "Christian B." },
   { name: "Tyler B." },
@@ -233,9 +233,9 @@ const PARTICIPANTS = [
   { name: "Preston S." },
   { name: "Wilson W." },
   { name: "Benny Y." },
-  { name: "Waxers Player 15" },
-  { name: "Waxers Player 16" },
-  { name: "Waxers Player 17" },
+  { name: "Nolan D." },
+  { name: "Brandon J." },
+  { name: "Mike C." },
 ];
 
 /* ---------- The 14 real prizes (confirmed Oct 2026). `value` is the stated

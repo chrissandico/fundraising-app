@@ -69,10 +69,9 @@ var CONFIG = {
    and the receipt email tell the buyer the family will reach out to
    arrange payment, and the order is flagged accordingly in the sheet.
    Display format is first name + last initial (Prof's call, Oct 2026).
-   "Waxers Player 15–17" are placeholders for families who haven't
-   submitted an EMT email; with no Roster row they automatically get the
-   contact-directly flow. When a family checks in, rename their placeholder
-   here, in index.html, and in the Roster tab — all three must match. */
+   Reps whose Roster-tab email is blank (currently Brandon J. and Mike C.)
+   automatically get the contact-directly flow. Names must match index.html
+   and the Roster tab exactly — all three places. */
 var PARTICIPANT_NAMES = [
   "Christian B.",
   "Tyler B.",
@@ -88,9 +87,9 @@ var PARTICIPANT_NAMES = [
   "Preston S.",
   "Wilson W.",
   "Benny Y.",
-  "Waxers Player 15",
-  "Waxers Player 16",
-  "Waxers Player 17"
+  "Nolan D.",
+  "Brandon J.",
+  "Mike C."
 ];
 
 /** Health check — open the /exec URL in a browser, you should see this. */
