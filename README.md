@@ -20,7 +20,7 @@ placeholders. Swap in the real data before launch (see "Going live" below).
 
 ## How it works
 
-1. Buyer selects a package (Single $10 / 5 for $40 / 15 for $100 / custom qty at $10 each).
+1. Buyer selects a package (Single $20 / 3 for $50 / 8 for $100 / custom qty at $20 each; a custom quantity that matches a package size gets the package price).
 2. Buyer selects a player/family → the page shows that person's Interac e-Transfer email.
 3. Buyer enters name, email, phone, accepts the legal terms, and submits.
 4. `index.html` POSTs the order JSON to the Apps Script Web App.

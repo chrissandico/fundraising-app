@@ -40,8 +40,8 @@ var CONFIG = {
   ORG_NAME: "Markham Waxers",
   MASTER_SHEET_NAME: "All Orders",
   ROSTER_SHEET_NAME: "Roster",
-  SINGLE_TICKET_PRICE: 10,             // price per ticket for custom quantities
-  PACKAGE_PRICES: { 1: 10, 5: 40, 15: 100 },  // must match PACKAGES in index.html
+  SINGLE_TICKET_PRICE: 20,             // price per ticket for custom quantities
+  PACKAGE_PRICES: { 1: 20, 3: 50, 8: 100 },  // must match PACKAGES in index.html
   SHEET_HEADERS: [
     "Timestamp", "Buyer Name", "Email", "Phone",
     "Package", "Qty", "Amount ($)", "Ref Code",

@@ -101,7 +101,7 @@
       <label for="customQty" class="text-sm font-medium whitespace-nowrap">Or custom quantity:</label>
       <input id="customQty" type="number" min="1" max="100" value="" placeholder="e.g. 7"
              class="w-24 border rounded-lg px-3 py-2 text-center" />
-      <span class="text-sm text-slate-500">$10 per ticket</span>
+      <span class="text-sm text-slate-500">$20 per ticket</span>
     </div>
 
     <!-- Participant -->
@@ -232,7 +232,7 @@ const CONFIG = {
   APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbyVl8eDaySYOq__X-QWr-6p1Q9X3I40ZTf7fU7ADGN_4N-H_2GcO6R2bkFzVBuMrgUO/exec",
 
   ORG_NAME: "Markham Waxers U13A",
-  SINGLE_TICKET_PRICE: 10,      // price per ticket for custom quantities
+  SINGLE_TICKET_PRICE: 20,      // price per ticket for custom quantities
   // NOTE: reference codes are issued by the Apps Script backend (unique and
   // sequential) — the page no longer generates them.
 };
@@ -319,9 +319,9 @@ const PRIZES = [
 ];
 
 const PACKAGES = [
-  { id: "single", label: "Single Ticket",        tickets: 1,  price: 10,  badge: "" },
-  { id: "bundle", label: "5-Ticket Bundle",     tickets: 5,  price: 40,  badge: "Most Popular" },
-  { id: "super",  label: "Super Pack — 15 Tickets", tickets: 15, price: 100, badge: "Best Value" },
+  { id: "single", label: "Single Ticket",        tickets: 1,  price: 20,  badge: "" },
+  { id: "bundle", label: "3-Ticket Bundle",     tickets: 3,  price: 50,  badge: "Most Popular" },
+  { id: "super",  label: "Super Pack — 8 Tickets", tickets: 8, price: 100, badge: "Best Value" },
 ];
 
 /* =====================================================================
@@ -441,9 +441,10 @@ function renderParticipants() {
 function currentOrder() {
   let pkgLabel, qty, total;
   if (state.customQty > 0) {
-    pkgLabel = "Custom quantity";
     qty = state.customQty;
-    total = qty * CONFIG.SINGLE_TICKET_PRICE;
+    const pkg = PACKAGES.find(x => x.tickets === qty);
+    pkgLabel = pkg ? pkg.label : "Custom quantity";
+    total = pkg ? pkg.price : qty * CONFIG.SINGLE_TICKET_PRICE;
   } else {
     const p = PACKAGES.find(x => x.id === state.packageId);
     pkgLabel = p.label;
