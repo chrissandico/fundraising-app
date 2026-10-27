@@ -98,6 +98,14 @@
     <h2 class="font-display text-3xl sm:text-4xl font-black text-center tracking-tight text-white mb-4">Get your tickets</h2>
     <p class="text-center text-amber-200/90 text-sm sm:text-base max-w-xl mx-auto mb-10">All ticket sales and payments must be received by <strong class="text-amber-300">Wednesday, November 25 at 12:00 noon</strong>. The draw takes place <strong class="text-amber-300">Thursday, November 26</strong> &mdash; drawing starts at 7:30 PM, with results ready by 8:00 PM.</p>
 
+    <!-- Shown instead of the order form once the sales deadline passes -->
+    <div id="salesClosed" class="hidden bg-white rounded-[21px] px-6 py-12 sm:px-10 text-center shadow-2xl">
+      <div class="text-5xl mb-4">&#127881;</div>
+      <h3 class="font-display text-3xl font-black tracking-tight text-waxers-950 mb-3">Ticket sales are now closed</h3>
+      <p class="text-slate-600 max-w-md mx-auto">Sales and payments closed <strong>Wednesday, November 25 at 12:00 noon</strong>. Thank you to everyone who supported the Markham Waxers U13A!</p>
+      <p class="text-slate-600 max-w-md mx-auto mt-3">The draw is <strong>Thursday, November 26</strong> &mdash; drawing starts at 7:30 PM, with results ready by 8:00 PM. Winners will be notified by email/phone.</p>
+    </div>
+
     <!-- C — Gold Frame: the form card floats on the navy stage -->
     <div id="formCard" class="bg-gradient-to-br from-amber-500 via-amber-200 to-waxers-500 rounded-[26px] p-[5px] shadow-2xl">
       <div class="bg-white rounded-[21px] px-4 py-6 sm:px-8 sm:py-8">
@@ -240,6 +248,11 @@ const CONFIG = {
   // Paste your deployed Google Apps Script Web App "/exec" URL here.
   // Leave empty to run in demo mode (orders will not be submitted).
   APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbyVl8eDaySYOq__X-QWr-6p1Q9X3I40ZTf7fU7ADGN_4N-H_2GcO6R2bkFzVBuMrgUO/exec",
+
+  // Sales deadline: Wed Nov 25, 2026 at 12:00 noon Toronto time (EST, UTC-5).
+  // After this instant the order form closes itself and the backend rejects
+  // new orders. Keep in sync with SALES_DEADLINE_MS in Code.gs.
+  SALES_DEADLINE: "2026-11-25T17:00:00Z",
 
   ORG_NAME: "Markham Waxers U13A",
   SINGLE_TICKET_PRICE: 20,      // price per ticket for custom quantities
@@ -583,6 +596,7 @@ function setBarMode(submit) {
   syncBarButton();
 }
 function openSheet() {
+  if (salesClosed()) { applySalesClosed(); return; }
   if (sheetOpen) return;
   sheetOpen = true;
   sheetDocked = true;
@@ -623,6 +637,11 @@ function minimizeSheet() {
 
 /* ----- submit ----- */
 async function submitOrder() {
+  if (salesClosed()) {
+    applySalesClosed();
+    showError(["Ticket sales closed at noon on Wednesday, November 25. Thank you for your support!"]);
+    return;
+  }
   $("formError").classList.add("hidden");
   if (!validate()) return;
 
@@ -791,6 +810,30 @@ $("statPrizeCount").textContent = PRIZES.length;
 const knownTotal = PRIZES.reduce((s, p) => s + (p.value || 0), 0);
 const headlineTotal = Math.ceil(knownTotal / 1000) * 1000;  // headline rounds UP to the nearest thousand (Prof, Oct 27)
 $("statTotalValue").textContent = "$" + headlineTotal.toLocaleString() + (PRIZES.some(p => !p.value) ? "+" : "");
+
+/* ----- sales deadline safeguard -----
+   At the deadline the form closes itself: the closed notice replaces the
+   form, the sticky bar hides, and submit/open are guarded above. The Apps
+   Script backend enforces the same instant server-side (this is the
+   shop-window sign; Code.gs is the lock). A page left open across the
+   deadline closes within 30 seconds via the interval check. */
+const SALES_DEADLINE_MS = Date.parse(CONFIG.SALES_DEADLINE);
+function salesClosed() { return Date.now() >= SALES_DEADLINE_MS; }
+let salesClosedApplied = false;
+function applySalesClosed() {
+  if (!salesClosed() || salesClosedApplied) return;
+  salesClosedApplied = true;
+  closeSheet();
+  formCardEl.classList.add("hidden");
+  $("formPlaceholder").classList.add("hidden");
+  $("salesClosed").classList.remove("hidden");
+  $("stickyBar").classList.add("hidden");
+  const cta = document.querySelector('a[href="#tickets"]');
+  if (cta) cta.textContent = "Sales closed";
+}
+applySalesClosed();
+setInterval(applySalesClosed, 30000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) applySalesClosed(); });
 </script>
 <div class="h-20"></div>
 </body>

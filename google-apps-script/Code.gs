@@ -28,6 +28,9 @@
  *     own tab.
  *  6. Emails a receipt. If the email fails, the order still succeeds — the
  *     response flags emailSent: false so the page can warn the buyer.
+ *  7. Sales deadline: NEW orders are rejected once SALES_DEADLINE_MS passes
+ *     (Wed Nov 25, 2026, noon Toronto time). Retries of orders placed before
+ *     the deadline still return their original tickets (see step 4).
  */
 
 var CONFIG = {
@@ -42,6 +45,7 @@ var CONFIG = {
   ROSTER_SHEET_NAME: "Roster",
   SINGLE_TICKET_PRICE: 20,             // price per ticket for custom quantities
   PACKAGE_PRICES: { 1: 20, 3: 50, 8: 100 },  // must match PACKAGES in index.html
+  SALES_DEADLINE_MS: Date.UTC(2026, 10, 25, 17, 0, 0), // Wed Nov 25, 2026, 12:00 noon Toronto time (EST = UTC-5). NEW orders at/after this instant are rejected; keep in sync with CONFIG.SALES_DEADLINE in index.html.
   SHEET_HEADERS: [
     "Timestamp", "Buyer Name", "Email", "Phone",
     "Package", "Qty", "Amount ($)", "Ref Code",
@@ -150,6 +154,13 @@ function doPost(e) {
         paymentMethod: emtEmail ? "emt" : "contact",
         duplicate: true
       });
+    }
+
+    // Sales deadline safeguard: no NEW orders at/after the deadline. This
+    // runs after the idempotency check on purpose — a network retry of an
+    // order placed before the deadline still returns its original tickets.
+    if (Date.now() >= CONFIG.SALES_DEADLINE_MS) {
+      throw new Error("Ticket sales closed at noon on Wednesday, November 25. Thank you for supporting the Markham Waxers U13A!");
     }
 
     // One lock for both counters: ticket numbers and reference codes stay
