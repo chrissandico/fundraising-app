@@ -373,8 +373,10 @@ function sendEmailReceipt(data) {
       "  Payment: " + participantDisplay + " will contact you directly to arrange payment \u2014 no e-Transfer is needed right now.\n";
   var closingText = hasEmt
     ? "Please complete your e-Transfer using the reference code above. " +
+      "All payments must be received by Wednesday, November 25 at 12:00 noon. " +
       "Your tickets are confirmed once payment is verified.\n\n"
-    : "Your tickets are confirmed once payment has been arranged with " + participantDisplay + ".\n\n";
+    : "Your tickets are confirmed once payment has been arranged with " + participantDisplay + ". " +
+      "All payments must be received by Wednesday, November 25 at 12:00 noon.\n\n";
 
   var textBody =
     "Hi " + data.buyerName + ",\n\n" +
@@ -384,6 +386,9 @@ function sendEmailReceipt(data) {
     paymentText + "\n" +
     "YOUR TICKET NUMBERS\n" +
     "  " + data.assignedTickets.join(", ") + "\n\n" +
+    "DRAW NIGHT\n" +
+    "  Thursday, November 26, 2026 \u2014 drawing starts at 7:30 PM, with results ready by 8:00 PM.\n" +
+    "  Winners will be notified by email/phone.\n\n" +
     closingText +
     "Good luck!\n" +
     CONFIG.ORG_NAME + " Fundraising Committee";
@@ -397,8 +402,10 @@ function sendEmailReceipt(data) {
       "<li>Payment: <strong>" + esc(participantDisplay) + " will contact you directly to arrange payment</strong> \u2014 no e-Transfer is needed right now.</li>";
   var closingHtml = hasEmt
     ? "<p>Please complete your e-Transfer using the reference code above. " +
+      "All payments must be received by <strong>Wednesday, November 25 at 12:00 noon</strong>. " +
       "Your tickets are confirmed once payment is verified.</p>"
-    : "<p>Your tickets are confirmed once payment has been arranged with " + esc(participantDisplay) + ".</p>";
+    : "<p>Your tickets are confirmed once payment has been arranged with " + esc(participantDisplay) + ". " +
+      "All payments must be received by <strong>Wednesday, November 25 at 12:00 noon</strong>.</p>";
 
   var htmlBody =
     "<p>Hi " + esc(data.buyerName) + ",</p>" +
@@ -410,6 +417,8 @@ function sendEmailReceipt(data) {
     "</ul>" +
     "<h3>Your ticket numbers</h3>" +
     "<p><strong>" + esc(data.assignedTickets.join(", ")) + "</strong></p>" +
+    "<h3>Draw night</h3>" +
+    "<p><strong>Thursday, November 26, 2026</strong> \u2014 drawing starts at 7:30 PM, with results ready by 8:00 PM. Winners will be notified by email/phone.</p>" +
     closingHtml +
     "<p>Good luck!<br/>" + esc(CONFIG.ORG_NAME) + " Fundraising Committee</p>";
 
