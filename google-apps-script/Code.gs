@@ -29,7 +29,7 @@
  *  6. Emails a receipt. If the email fails, the order still succeeds — the
  *     response flags emailSent: false so the page can warn the buyer.
  *  7. Sales deadline: NEW orders are rejected once SALES_DEADLINE_MS passes
- *     (Wed Nov 25, 2026, noon Toronto time). Retries of orders placed before
+ *     (Wed Nov 25, 2026, midnight Toronto time). Retries of orders placed before
  *     the deadline still return their original tickets (see step 4).
  */
 
@@ -45,7 +45,7 @@ var CONFIG = {
   ROSTER_SHEET_NAME: "Roster",
   SINGLE_TICKET_PRICE: 20,             // price per ticket for custom quantities
   PACKAGE_PRICES: { 1: 20, 3: 50, 8: 100 },  // must match PACKAGES in index.html
-  SALES_DEADLINE_MS: Date.UTC(2026, 10, 25, 17, 0, 0), // Wed Nov 25, 2026, 12:00 noon Toronto time (EST = UTC-5). NEW orders at/after this instant are rejected; keep in sync with CONFIG.SALES_DEADLINE in index.html.
+  SALES_DEADLINE_MS: Date.UTC(2026, 10, 26, 5, 0, 0), // midnight at the end of Wed Nov 25, 2026 Toronto time (12:00 AM Nov 26, EST = UTC-5). NEW orders at/after this instant are rejected; keep in sync with CONFIG.SALES_DEADLINE in index.html.
   SHEET_HEADERS: [
     "Timestamp", "Buyer Name", "Email", "Phone",
     "Package", "Qty", "Amount ($)", "Ref Code",
@@ -160,7 +160,7 @@ function doPost(e) {
     // runs after the idempotency check on purpose — a network retry of an
     // order placed before the deadline still returns its original tickets.
     if (Date.now() >= CONFIG.SALES_DEADLINE_MS) {
-      throw new Error("Ticket sales closed at noon on Wednesday, November 25. Thank you for supporting the Markham Waxers U13A!");
+      throw new Error("Ticket sales closed at midnight on Wednesday, November 25. Thank you for supporting the Markham Waxers U13A!");
     }
 
     // One lock for both counters: ticket numbers and reference codes stay
@@ -373,10 +373,10 @@ function sendEmailReceipt(data) {
       "  Payment: " + participantDisplay + " will contact you directly to arrange payment \u2014 no e-Transfer is needed right now.\n";
   var closingText = hasEmt
     ? "Please complete your e-Transfer using the reference code above. " +
-      "All payments must be received by Wednesday, November 25 at 12:00 noon. " +
+      "All payments must be received by Wednesday, November 25 at midnight. " +
       "Your tickets are confirmed once payment is verified.\n\n"
     : "Your tickets are confirmed once payment has been arranged with " + participantDisplay + ". " +
-      "All payments must be received by Wednesday, November 25 at 12:00 noon.\n\n";
+      "All payments must be received by Wednesday, November 25 at midnight.\n\n";
 
   var textBody =
     "Hi " + data.buyerName + ",\n\n" +
@@ -402,10 +402,10 @@ function sendEmailReceipt(data) {
       "<li>Payment: <strong>" + esc(participantDisplay) + " will contact you directly to arrange payment</strong> \u2014 no e-Transfer is needed right now.</li>";
   var closingHtml = hasEmt
     ? "<p>Please complete your e-Transfer using the reference code above. " +
-      "All payments must be received by <strong>Wednesday, November 25 at 12:00 noon</strong>. " +
+      "All payments must be received by <strong>Wednesday, November 25 at midnight</strong>. " +
       "Your tickets are confirmed once payment is verified.</p>"
     : "<p>Your tickets are confirmed once payment has been arranged with " + esc(participantDisplay) + ". " +
-      "All payments must be received by <strong>Wednesday, November 25 at 12:00 noon</strong>.</p>";
+      "All payments must be received by <strong>Wednesday, November 25 at midnight</strong>.</p>";
 
   var htmlBody =
     "<p>Hi " + esc(data.buyerName) + ",</p>" +
