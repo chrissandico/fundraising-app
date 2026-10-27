@@ -779,7 +779,8 @@ updateSummary();
 // Hero stats, computed from the prize list
 $("statPrizeCount").textContent = PRIZES.length;
 const knownTotal = PRIZES.reduce((s, p) => s + (p.value || 0), 0);
-$("statTotalValue").textContent = "$" + knownTotal.toLocaleString() + (PRIZES.some(p => !p.value) ? "+" : "");
+const headlineTotal = Math.ceil(knownTotal / 1000) * 1000;  // headline rounds UP to the nearest thousand (Prof, Oct 27)
+$("statTotalValue").textContent = "$" + headlineTotal.toLocaleString() + (PRIZES.some(p => !p.value) ? "+" : "");
 </script>
 <div class="h-20"></div>
 </body>
