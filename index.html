@@ -268,7 +268,7 @@ const PARTICIPANTS = [
   { name: "Mike C." },
 ];
 
-/* ---------- The 15 real prizes (confirmed Oct 2026). `value` is the stated
+/* ---------- The 21 prizes (final list confirmed by Prof Oct 26, 2026). `value` is the stated
    dollar value where one is known; null = no stated value. ---------- */
 const PRIZES = [
   { name: "Ultimate Leafs Experience", category: "Grand Prizes", value: null,
@@ -279,43 +279,61 @@ const PRIZES = [
     description: "Two tickets to see the Toronto Maple Leafs vs. Winnipeg Jets &mdash; Monday, January 11 at 7:30 PM." },
   { name: "Raptors Night Out", category: "Grand Prizes", value: null,
     image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/raptors.jpg",
-    description: "Toronto Raptors game tickets &mdash; catch the action live from the stands." },
-  { name: "Ultimate Tech Package", category: "Grand Prizes", value: null,
+    description: "Two Toronto Raptors game tickets &mdash; opponent and date to be announced." },
+  { name: "Ultimate Tech Package", category: "Grand Prizes", value: 600,
     image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/tech-package.jpg",
-    description: "A Samsung smartphone plus a Lenovo headset &mdash; the full tech upgrade." },
-  { name: "McDavid Fan Favourite", category: "Exclusive Hockey Collectibles", value: null,
+    description: "A Samsung smartphone plus a Lenovo wireless headset &mdash; the ultimate tech upgrade!" },
+  { name: "Greenworks Powerhouse", category: "Grand Prizes", value: 520,
+    image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/greenworks-powerhouse.jpg",
+    description: "A Greenworks 48V 16-inch cordless chainsaw kit &mdash; two 4Ah batteries, charger, and an extra chain included." },
+  { name: "McDavid Fan Favourite", category: "Exclusive Hockey Collectibles", value: 340,
     image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/mcdavid-jersey.jpg",
-    description: "A Connor McDavid hockey jersey &mdash; a must-have for any fan's collection." },
-  { name: "NHLPA Autographed Collector's Package", category: "Exclusive Hockey Collectibles", value: null,
+    description: "A Connor McDavid hockey jersey &mdash; a must-have for hockey fans!" },
+  { name: "NHLPA Autographed Collector's Package", category: "Exclusive Hockey Collectibles", value: 250,
     image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/autographed-package.jpg",
-    description: "Drew Doughty autographed 8x10 photo with NHLPA Certificate of Authenticity, plus an NHLPA hat and T-shirt." },
-  { name: "Weekend Warrior Package", category: "Shopping, Family Fun & Lifestyle", value: 520,
-    image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/weekend-warrior.jpg",
-    description: "Greenworks 48V 16-inch chainsaw kit &mdash; extra chain, two 4Ah batteries and charger included &mdash; plus a $100 Canadian Tire gift card." },
-  { name: "Foodie Shopping Spree", category: "Shopping, Family Fun & Lifestyle", value: 200,
+    description: "A Drew Doughty autographed 8x10 photo with NHLPA Certificate of Authenticity, plus an NHLPA hat and T-shirt." },
+  { name: "Foodie Shopping Spree", category: "Shopping & Lifestyle", value: 200,
     image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/foodie-spree.jpg",
     description: "A $200 T&amp;T Supermarket gift card &mdash; stock up on all your favourites." },
-  { name: "Ultimate Family Adventure", category: "Shopping, Family Fun & Lifestyle", value: null,
-    image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/family-adventure.jpg",
-    description: "A 3-month Taekwondo membership, a Treetop Trekking zipline &amp; aerial game trek for two, a family mini golf pass, and a $100 swimming gift certificate." },
-  { name: "Shop Till You Drop", category: "Shopping, Family Fun & Lifestyle", value: 225,
-    image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/shop-till-you-drop.jpg",
-    description: "A $100 Amazon gift card, a $100 Walmart gift card, and a $25 Mastercard gift card." },
-  { name: "Pamper &amp; Unwind", category: "Shopping, Family Fun & Lifestyle", value: null,
-    image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/pamper-unwind.jpg",
-    description: "A haircut gift certificate plus a $50 LCBO gift card &mdash; relax and recharge." },
-  { name: "Celebrate in Style", category: "Shopping, Family Fun & Lifestyle", value: 200,
+  { name: "Shop Till You Drop", category: "Shopping & Lifestyle", value: 100,
+    image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/amazon.jpg",
+    description: "A $100 Amazon gift card." },
+  { name: "Walmart Gift Card", category: "Shopping & Lifestyle", value: 100,
+    image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/walmart.jpg",
+    description: "A $100 Walmart gift card." },
+  { name: "Celebrate in Style", category: "Shopping & Lifestyle", value: 100,
     image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/celebrate-style.jpg",
-    description: "$200 in LCBO gift cards &mdash; raise a glass, on us." },
-  { name: "Cheers to the Weekend", category: "Shopping, Family Fun & Lifestyle", value: 200,
+    description: "Two $50 LCBO gift cards &mdash; perfect for celebrations and special occasions!" },
+  { name: "LCBO Gift Card", category: "Shopping & Lifestyle", value: 100,
+    image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/lcbo-angled.jpg",
+    description: "Two $50 LCBO gift cards." },
+  { name: "Cheers to the Weekend", category: "Shopping & Lifestyle", value: 100,
     image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/cheers-weekend.jpg",
-    description: "$200 in LCBO gift cards &mdash; your weekend, upgraded." },
-  { name: "Joyride 150 Day Pass", category: "Shopping, Family Fun & Lifestyle", value: null,
+    description: "Two $50 LCBO gift cards &mdash; treat yourself to something special!" },
+  { name: "LCBO Gift Cards", category: "Shopping & Lifestyle", value: 100,
+    image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/lcbo-duo.jpg",
+    description: "Two $50 LCBO gift cards." },
+  { name: "Taekwondo Champion Package", category: "Family Adventures & Experiences", value: 750,
+    image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/taekwondo.jpg",
+    description: "A 3-month Taekwondo membership &mdash; build confidence, strength, and discipline!" },
+  { name: "Ultimate Family Adventure", category: "Family Adventures & Experiences", value: 199,
+    image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/family-adventure.jpg",
+    description: "A Treetop Trekking zipline &amp; aerial game trek for two, plus a family mini golf pass." },
+  { name: "Canadian Tire Gift Card", category: "Family Adventures & Experiences", value: 100,
+    image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/canadian-tire.jpg",
+    description: "A $100 Canadian Tire gift card." },
+  { name: "Active Lifestyle Package", category: "Family Adventures & Experiences", value: 100,
+    image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/swimming.jpg",
+    description: "A $100 swimming gift certificate." },
+  { name: "Lion Hockey Sharpening Card", category: "Family Adventures & Experiences", value: 100,
+    image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/lion-hockey.jpg",
+    description: "A $100 Lion Hockey skate sharpening card &mdash; perfect for active families and hockey enthusiasts!" },
+  { name: "Ultimate Fun & Treats", category: "Family Adventures & Experiences", value: 117,
     image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/joyride-150.jpg",
-    description: "One free day pass to Joyride 150 Indoor Bike Park &mdash; and the Joyride 150 water bottle in the photo is yours to keep." },
-  { name: "Denthreesixty Arcade Gift Card", category: "Shopping, Family Fun & Lifestyle", value: null,
-    image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/denthreesixty.jpg",
-    description: "A gift card for Denthreesixty Arcade in Markham &mdash; the GTA's first video game console arcade, packed with retro consoles and classic arcade machines. Drop-in gaming fun for all ages." },
+    description: "A Joyride 150 Indoor Bike Park day pass, a $40 Denthreesixty Arcade gift card, and a haircut gift certificate &mdash; a bundle of fun." },
+  { name: "Gift Card Bundle", category: "Family Adventures & Experiences", value: 75,
+    image: "https://raw.githubusercontent.com/chrissandico/fundraising-app/main/assets/prizes/gift-card-bundle.jpg",
+    description: "A $50 LCBO gift card plus a $25 Mastercard gift card." }
 ];
 
 const PACKAGES = [
@@ -338,7 +356,7 @@ const $ = (id) => document.getElementById(id);
 function money(n) { return "$" + Number(n).toFixed(2); }
 
 /* ----- render prizes ----- */
-const PRIZE_CATEGORIES = ["Grand Prizes", "Exclusive Hockey Collectibles", "Shopping, Family Fun & Lifestyle"];
+const PRIZE_CATEGORIES = ["Grand Prizes", "Exclusive Hockey Collectibles", "Shopping & Lifestyle", "Family Adventures & Experiences"];
 
 function prizeCard(p) {
   const pill = p.value
