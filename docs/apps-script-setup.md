@@ -61,8 +61,12 @@ orders to. You only need a Google account and a Google Sheet. Takes about 10 min
 
 - **Ticket numbers** are sequential and gap-free (`TK-1000`, `TK-1001`, …). A script lock
   prevents duplicates even if two people submit at the same moment.
-- **Email receipts** are sent from the Google account that deployed the script, via Gmail.
-  Gmail's daily sending limits apply (plenty for a fundraiser).
+- **Order emails** are sent from the Google account that deployed the script, via Gmail.
+  The buyer receives a receipt, and the sales rep's family receives a new-order
+  notification at the email address in the `Roster` tab — the same address used
+  for Interac e-Transfer — with the buyer's contact details, the amount due,
+  and the reference code to watch for. Gmail's daily sending limits apply
+  (plenty for a fundraiser).
 - **Sheet tab names** come from the player/family name in the dropdown. Avoid renaming tabs
   manually — new orders always go to the tab matching the selected name.
 - **EMT verification** is manual by design: families check their bank account, then update
@@ -83,4 +87,5 @@ orders to. You only need a Google account and a Google Sheet. Takes about 10 min
 - A sales rep with **no row (or a blank email)** is treated as "family contacts the
   buyer directly": the confirmation screen and the receipt email tell the buyer the
   family will reach out to arrange payment, and the order is flagged
-  `Family to contact buyer` in the sheet.
+  `Family to contact buyer` in the sheet. That family also cannot receive the
+  new-order notification email until an email address is added to the `Roster` tab.

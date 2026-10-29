@@ -26,8 +26,10 @@
  *     twice (idempotency — no duplicate tickets on double-click/retry).
  *  5. Appends the order to the master "All Orders" tab AND the participant's
  *     own tab.
- *  6. Emails a receipt. If the email fails, the order still succeeds — the
- *     response flags emailSent: false so the page can warn the buyer.
+ *  6. Emails the buyer a receipt and, when the sales rep's family has an
+ *     email address on file, emails that family a new-order notification.
+ *     Email failures do not fail the order; the response and the master
+ *     sheet record whether each message was sent.
  *  7. Sales deadline: NEW orders are rejected once SALES_DEADLINE_MS passes
  *     (Wed Nov 25, 2026, midnight Toronto time). Retries of orders placed before
  *     the deadline still return their original tickets (see step 4).
@@ -55,7 +57,7 @@ var CONFIG = {
     "Timestamp", "Buyer Name", "Email", "Phone", "Participant",
     "Package", "Qty", "Amount ($)", "Ref Code",
     "Ticket Numbers", "EMT Status (Manual)",
-    "Client Order ID", "Receipt Emailed"
+    "Client Order ID", "Receipt Emailed", "Family Emailed"
   ]
 };
 
@@ -106,7 +108,8 @@ function doGet() {
 /**
  * Receives the order payload from index.html, validates it against the
  * server-side roster and price schedule, assigns a unique reference code and
- * sequential ticket numbers, logs the order, and emails a receipt.
+ * sequential ticket numbers, logs the order, emails the buyer a receipt, and
+ * notifies the sales rep's family when an email address is on file.
  */
 function doPost(e) {
   try {
@@ -150,6 +153,7 @@ function doPost(e) {
         tickets: existing.tickets,
         referenceCode: existing.refCode,
         emailSent: existing.emailSent,
+        familyEmailSent: existing.familyEmailSent,
         emtEmail: emtEmail || null,
         paymentMethod: emtEmail ? "emt" : "contact",
         duplicate: true
@@ -169,12 +173,24 @@ function doPost(e) {
     data.assignedTickets = allocation.tickets;
     data.referenceCode = allocation.refCode;
 
-    // A failed receipt email must not fail the order — the tickets are valid.
+    // Failed email must not fail the order — the tickets are valid. The
+    // buyer receipt and family notification are attempted independently, so
+    // one bad or missing address does not suppress the other message.
     var emailSent = true;
     try {
       sendEmailReceipt(data);
     } catch (emailErr) {
       emailSent = false;
+    }
+
+    var familyEmailSent = false;
+    if (emtEmail) {
+      try {
+        sendFamilyNotification(data);
+        familyEmailSent = true;
+      } catch (familyEmailErr) {
+        familyEmailSent = false;
+      }
     }
 
     var timestamp = String(data.timestamp);
@@ -194,7 +210,8 @@ function doPost(e) {
       ticketList,
       payStatus,   // families update this manually once payment lands
       clientOrderId,
-      emailSent ? "Yes" : "No"
+      emailSent ? "Yes" : "No",
+      familyEmailSent ? "Yes" : (emtEmail ? "No" : "No email on file")
     ]);
 
     var sheet = getOrCreateParticipantSheet(ss, participantName);
@@ -216,6 +233,7 @@ function doPost(e) {
       tickets: allocation.tickets,
       referenceCode: allocation.refCode,
       emailSent: emailSent,
+      familyEmailSent: familyEmailSent,
       emtEmail: emtEmail || null,
       paymentMethod: emtEmail ? "emt" : "contact"
     });
@@ -284,19 +302,21 @@ function allocateTicketsAndRef(count) {
 
 /* ---------------- idempotency ----------------
  * Looks up a previous order by the client-generated order ID in the master
- * tab (columns I–M: Ref Code, Ticket Numbers, EMT Status, Client Order ID,
- * Receipt Emailed). Returns the stored result so retries are harmless.
+ * tab (columns I–N: Ref Code, Ticket Numbers, EMT Status, Client Order ID,
+ * Receipt Emailed, Family Emailed). Returns the stored result so retries are
+ * harmless and do not send duplicate emails.
  */
 function findOrderByClientId(master, clientOrderId) {
   var lastRow = master.getLastRow();
   if (lastRow < 2 || !clientOrderId) return null;
-  var values = master.getRange(2, 9, lastRow - 1, 5).getValues();
+  var values = master.getRange(2, 9, lastRow - 1, 6).getValues();
   for (var i = 0; i < values.length; i++) {
     if (String(values[i][3]) === clientOrderId && values[i][3] !== "") {
       return {
         refCode: String(values[i][0]),
         tickets: String(values[i][1]).split(/,\s*/),
-        emailSent: String(values[i][4]) === "Yes"
+        emailSent: String(values[i][4]) === "Yes",
+        familyEmailSent: String(values[i][5]) === "Yes"
       };
     }
   }
@@ -313,6 +333,15 @@ function getOrCreateMasterSheet(ss) {
     sheet.setFrozenRows(1);
     sheet.getRange(1, 1, 1, CONFIG.MASTER_HEADERS.length).setFontWeight("bold");
     sheet.autoResizeColumns(1, CONFIG.MASTER_HEADERS.length);
+    return sheet;
+  }
+
+  // Sheets created before family notifications have no "Family Emailed"
+  // header in column N. Add it without disturbing existing order rows.
+  var familyHeader = sheet.getRange(1, CONFIG.MASTER_HEADERS.length);
+  if (!familyHeader.getValue()) {
+    familyHeader.setValue("Family Emailed");
+    familyHeader.setFontWeight("bold");
   }
   return sheet;
 }
@@ -423,6 +452,72 @@ function sendEmailReceipt(data) {
     "<p>Good luck!<br/>" + esc(CONFIG.ORG_NAME) + " Fundraising Committee</p>";
 
   GmailApp.sendEmail(data.buyerEmail, subject, textBody, { htmlBody: htmlBody, name: CONFIG.ORG_NAME + " Raffle" });
+}
+
+/* ---------------- family order notification ----------------
+ * Sent to the sales rep's Roster-tab email address — the same private
+ * address buyers use for Interac e-Transfer. It gives the family the buyer
+ * and payment details they need to watch for and verify the payment.
+ * Families with no email address on file cannot be emailed; their orders
+ * remain in the existing "family contacts the buyer directly" flow.
+ */
+function sendFamilyNotification(data) {
+  if (!data.emtEmail) return;
+
+  var participantDisplay = String(data.selectedParticipant).replace(/^Family:\s*/, "");
+  var subject = "New " + CONFIG.ORG_NAME + " Raffle Order for " + participantDisplay +
+    " \u2014 Ref " + data.referenceCode;
+  var totalStr = "$" + Number(data.totalAmount).toFixed(2);
+  var ticketList = data.assignedTickets.join(", ");
+
+  var textBody =
+    "Hi " + participantDisplay + ",\n\n" +
+    "A new Markham Waxers raffle order has been submitted with you listed as the sales rep.\n\n" +
+    "ORDER DETAILS\n" +
+    "  Buyer: " + data.buyerName + "\n" +
+    "  Buyer email: " + data.buyerEmail + "\n" +
+    "  Buyer phone: " + data.buyerPhone + "\n" +
+    "  Package: " + data.packageSelected + " (" + data.ticketCount + " tickets)\n" +
+    "  Ticket numbers: " + ticketList + "\n" +
+    "  Reference code: " + data.referenceCode + "\n" +
+    "  Total due: " + totalStr + "\n\n" +
+    "PAYMENT\n" +
+    "  The buyer was instructed to send an Interac e-Transfer for " + totalStr +
+    " to this email address, with reference code " + data.referenceCode +
+    " included in the e-transfer memo.\n" +
+    "  Please watch for the payment. Once it arrives, mark reference code " +
+    data.referenceCode + " as Paid in the All Orders sheet.\n\n" +
+    "All payments must be received by Wednesday, November 25 at midnight.\n\n" +
+    "Thank you!\n" +
+    CONFIG.ORG_NAME + " Fundraising Committee";
+
+  var htmlBody =
+    "<p>Hi " + esc(participantDisplay) + ",</p>" +
+    "<p>A new Markham Waxers raffle order has been submitted with you listed as the sales rep.</p>" +
+    "<h3>Order details</h3>" +
+    "<ul>" +
+    "<li>Buyer: <strong>" + esc(data.buyerName) + "</strong></li>" +
+    "<li>Buyer email: <strong>" + esc(data.buyerEmail) + "</strong></li>" +
+    "<li>Buyer phone: <strong>" + esc(data.buyerPhone) + "</strong></li>" +
+    "<li>Package: " + esc(data.packageSelected) + " (" + esc(data.ticketCount) + " tickets)</li>" +
+    "<li>Ticket numbers: <strong>" + esc(ticketList) + "</strong></li>" +
+    "<li>Reference code: <strong>" + esc(data.referenceCode) + "</strong></li>" +
+    "<li>Total due: <strong>" + totalStr + "</strong></li>" +
+    "</ul>" +
+    "<h3>Payment</h3>" +
+    "<p>The buyer was instructed to send an Interac e-Transfer for <strong>" + totalStr +
+    "</strong> to this email address, with reference code <strong>" + esc(data.referenceCode) +
+    "</strong> included in the e-transfer memo.</p>" +
+    "<p>Please watch for the payment. Once it arrives, mark reference code <strong>" +
+    esc(data.referenceCode) + "</strong> as Paid in the All Orders sheet.</p>" +
+    "<p>All payments must be received by <strong>Wednesday, November 25 at midnight</strong>.</p>" +
+    "<p>Thank you!<br/>" + esc(CONFIG.ORG_NAME) + " Fundraising Committee</p>";
+
+  GmailApp.sendEmail(data.emtEmail, subject, textBody, {
+    htmlBody: htmlBody,
+    name: CONFIG.ORG_NAME + " Raffle",
+    replyTo: data.buyerEmail
+  });
 }
 
 function esc(s) {
