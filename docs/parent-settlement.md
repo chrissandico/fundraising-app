@@ -50,7 +50,10 @@ Always in this order:
   the execution log alone.
 - **Cross-checked:** every run compares All Orders against each player's
   own tab and warns about any reference code that exists in one but not
-  the other — the classic cause of "my count differs from the email".
+  the other, and about any order whose EMT Status text differs between
+  the two places — the classic causes of "my count differs from the
+  email". The settlement always reads **All Orders**, so payment
+  statuses must be maintained there, not only in the player tabs.
 - **Totals:** the email asks for the **full valid total** under the player,
   and breaks it down into *Marked Paid in the sheet* vs *Still outstanding
   from buyers*. Step 1 of the email tells the family to reply with the

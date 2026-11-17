@@ -19,7 +19,9 @@
  *    buyer, amount, status) so a total can be audited from the
  *    log alone, and every run cross-checks All Orders against
  *    each player's own tab, warning about any reference code
- *    that exists in one but not the other.
+ *    that exists in one but not the other — and about any order
+ *    whose EMT Status text differs between the two places (the
+ *    settlement always reads All Orders).
  *  - Repeat-safe: every draft/send is recorded in a "Settlement
  *    Log" tab with a fingerprint of the exact order set. Running
  *    the tool twice never emails a family twice for the same set
@@ -416,15 +418,25 @@ function settlementCrossCheck_(ss, rosterOrder, byParticipant) {
       var ref = settlementStr_(tabRows[i][7]);   // player tab: Ref Code is column H
       if (!ref) continue;
       tabRefs[ref] = { buyer: settlementStr_(tabRows[i][1]),
-                       amount: parseFloat(tabRows[i][6]) || 0 };
+                       amount: parseFloat(tabRows[i][6]) || 0,
+                       status: settlementStr_(tabRows[i][9]) };
     }
+    var statusDiffs = [];
     Object.keys(group.all).forEach(function (ref) {
       if (!tabRefs[ref]) {
         warnings.push(participant + ": " + ref + " (" + group.all[ref].buyer + ", " +
           settlementMoney_(group.all[ref].amount) + ") is in All Orders but NOT in the " +
           participant + " tab");
+      } else if (tabRefs[ref].status.toLowerCase() !==
+                 (group.all[ref].status || "").toLowerCase()) {
+        statusDiffs.push(ref + " (All Orders: \"" + group.all[ref].status +
+          "\" vs tab: \"" + tabRefs[ref].status + "\")");
       }
     });
+    if (statusDiffs.length) {
+      warnings.push(participant + ": EMT Status differs between All Orders and the tab for " +
+        statusDiffs.join(", ") + " — the settlement reads All Orders");
+    }
     Object.keys(tabRefs).forEach(function (ref) {
       if (!group.all[ref]) {
         warnings.push(participant + ": " + ref + " (" + tabRefs[ref].buyer + ", " +
