@@ -1,0 +1,408 @@
+/**
+ * ============================================================
+ * Markham Waxers U13A Raffle — Parent Settlement Emails
+ * ============================================================
+ * Sends each sales rep's family ONE summary email listing every
+ * raffle order recorded under their player, with the full amount
+ * they need to e-Transfer to the team's collection address.
+ *
+ * HOW THIS DIFFERS FROM A PER-PLAYER-TAB SCRIPT:
+ *  - Reads the master "All Orders" tab ONCE (the single source of
+ *    truth the order backend writes), instead of opening 17
+ *    per-player tabs whose names must match exactly.
+ *  - Dedupes by reference code AND client order ID, and excludes
+ *    test orders on several signals (status, probe IDs, test
+ *    buyer names/emails) — not just a "testing" status.
+ *  - Repeat-safe: every draft/send is recorded in a "Settlement
+ *    Log" tab with a fingerprint of the exact order set. Running
+ *    the tool twice never emails a family twice for the same set
+ *    of orders; if new orders arrive, only the changed families
+ *    get a fresh email.
+ *  - Sends a real plain-text body alongside the HTML (an empty
+ *    text body renders blank in some mail apps and hurts spam
+ *    scoring), and HTML-escapes buyer names so a stray "&" or "<"
+ *    in a name can't break the table.
+ *  - One family's bad email address can't abort the whole run —
+ *    failures are logged and reported at the end.
+ *
+ * SETUP:
+ *  1. In the orders spreadsheet: Extensions → Apps Script.
+ *  2. DELETE any earlier test settlement script in the project
+ *     (two onOpen functions in one project conflict).
+ *  3. Add a NEW file named "ParentSettlement" and paste this in.
+ *  4. Confirm SETTLEMENT_COLLECTION_EMAIL below is the real team
+ *     collection inbox.
+ *  5. Save, reload the spreadsheet, and use the new
+ *     "Raffle Settlement" menu: Preview first, then Create
+ *     Drafts, review them in Gmail, then either send the drafts
+ *     yourself or use Send Emails.
+ *
+ * Nothing is ever sent by Preview. Drafts are the default path.
+ * ============================================================
+ */
+
+// The team inbox that collects each family's full settlement.
+// CONFIRM this is the real collection address before sending.
+var SETTLEMENT_COLLECTION_EMAIL = "payments@markhamwaxers.ca";
+
+var SETTLEMENT_TEAM_NAME = "Markham Waxers U13A";
+var SETTLEMENT_LOG_SHEET = "Settlement Log";
+
+// All Orders column positions (0-based), matching Code.gs MASTER_HEADERS:
+// Timestamp, Buyer Name, Email, Phone, Participant, Package, Qty,
+// Amount ($), Ref Code, Ticket Numbers, EMT Status (Manual),
+// Client Order ID, Receipt Emailed, Family Emailed
+var SETTLEMENT_COL = {
+  BUYER: 1, EMAIL: 2, PARTICIPANT: 4, PACKAGE: 5, QTY: 6,
+  AMOUNT: 7, REF: 8, STATUS: 10, CLIENT_ID: 11
+};
+
+/** Adds the "Raffle Settlement" menu when the spreadsheet opens. */
+function onOpen() {
+  try {
+    SpreadsheetApp.getUi()
+      .createMenu("Raffle Settlement")
+      .addItem("1. Preview settlement (no emails)", "previewParentSettlement")
+      .addItem("2. Create settlement drafts in Gmail", "draftParentSettlement")
+      .addSeparator()
+      .addItem("3. SEND settlement emails now", "sendParentSettlement")
+      .addToUi();
+  } catch (e) {
+    console.warn("Menu unavailable in this context: " + e);
+  }
+}
+
+function previewParentSettlement() { return runParentSettlement_("PREVIEW"); }
+function draftParentSettlement() { return runParentSettlement_("DRAFT"); }
+function sendParentSettlement() { return runParentSettlement_("SEND"); }
+
+/**
+ * Main entry. mode: "PREVIEW" (log only), "DRAFT" (Gmail drafts),
+ * or "SEND" (emails immediately, after an on-screen confirmation).
+ */
+function runParentSettlement_(mode) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ui = null;
+  try { ui = SpreadsheetApp.getUi(); } catch (e) { /* headless run */ }
+
+  if (mode === "SEND") {
+    if (!ui) throw new Error("SEND mode needs the spreadsheet UI for confirmation.");
+    var resp = ui.alert(
+      "Send settlement emails?",
+      "This will EMAIL every family with orders right away (not drafts). Continue?",
+      ui.ButtonSet.YES_NO
+    );
+    if (resp !== ui.Button.YES) { ui.alert("Cancelled — nothing sent."); return; }
+  }
+
+  var rosterSheet = ss.getSheetByName("Roster");
+  var masterSheet = ss.getSheetByName("All Orders");
+  if (!rosterSheet) throw new Error('Tab "Roster" not found.');
+  if (!masterSheet) throw new Error('Tab "All Orders" not found.');
+
+  // --- Roster: participant -> family email (order preserved) ---
+  var rosterRows = rosterSheet.getDataRange().getValues();
+  var rosterOrder = [];
+  var familyEmail = {};
+  for (var r = 1; r < rosterRows.length; r++) {
+    var name = settlementStr_(rosterRows[r][0]);
+    if (!name) continue;
+    rosterOrder.push(name);
+    familyEmail[name] = settlementStr_(rosterRows[r][1]);
+  }
+
+  // --- All Orders: group valid orders by participant ---
+  var rows = masterSheet.getDataRange().getValues();
+  var seenRefs = {}, seenClientIds = {};
+  var byParticipant = {};   // name -> {orders:[], duplicates:[]}
+  var stats = { rows: 0, test: 0, testAmount: 0, dupAmount: 0, validAmount: 0 };
+  var unknownParticipants = {};
+
+  for (var i = 1; i < rows.length; i++) {
+    var row = rows[i];
+    var participant = settlementStr_(row[SETTLEMENT_COL.PARTICIPANT]);
+    var ref = settlementStr_(row[SETTLEMENT_COL.REF]);
+    var amount = parseFloat(row[SETTLEMENT_COL.AMOUNT]) || 0;
+    if (!participant || !ref) continue;
+    stats.rows++;
+    if (!(participant in familyEmail)) unknownParticipants[participant] = true;
+
+    var order = {
+      buyer: settlementStr_(row[SETTLEMENT_COL.BUYER]),
+      buyerEmail: settlementStr_(row[SETTLEMENT_COL.EMAIL]),
+      pkg: settlementStr_(row[SETTLEMENT_COL.PACKAGE]),
+      qty: parseInt(row[SETTLEMENT_COL.QTY], 10) || 0,
+      amount: amount,
+      ref: ref,
+      status: settlementStr_(row[SETTLEMENT_COL.STATUS]),
+      clientId: settlementStr_(row[SETTLEMENT_COL.CLIENT_ID])
+    };
+
+    if (settlementIsTestOrder_(order)) {
+      stats.test++; stats.testAmount += amount;
+      continue;
+    }
+    var isDupStatus = order.status.toLowerCase().indexOf("duplicate") !== -1;
+    var isDupKey = seenRefs[ref] || (order.clientId && seenClientIds[order.clientId]);
+    seenRefs[ref] = true;
+    if (order.clientId) seenClientIds[order.clientId] = true;
+
+    if (!byParticipant[participant]) byParticipant[participant] = { orders: [], duplicates: [] };
+    if (isDupStatus || isDupKey) {
+      byParticipant[participant].duplicates.push(order);
+      stats.dupAmount += amount;
+    } else {
+      byParticipant[participant].orders.push(order);
+      stats.validAmount += amount;
+    }
+  }
+
+  // --- Previous runs: fingerprint -> actions already taken ---
+  var logSheet = (mode === "PREVIEW") ? ss.getSheetByName(SETTLEMENT_LOG_SHEET)
+                                      : settlementGetLogSheet_(ss);
+  var priorActions = {}; // fingerprint -> {DRAFTED:true, SENT:true}
+  if (logSheet && logSheet.getLastRow() > 1) {
+    var logRows = logSheet.getDataRange().getValues();
+    for (var l = 1; l < logRows.length; l++) {
+      var fp = settlementStr_(logRows[l][7]);
+      var action = settlementStr_(logRows[l][1]);
+      if (!fp) continue;
+      if (!priorActions[fp]) priorActions[fp] = {};
+      priorActions[fp][action] = true;
+    }
+  }
+
+  // --- Per family ---
+  var done = [], skipped = [], failed = [];
+  var grandTotal = 0;
+
+  rosterOrder.forEach(function (participant) {
+    var email = familyEmail[participant];
+    var group = byParticipant[participant] || { orders: [], duplicates: [] };
+
+    function skip(reason) {
+      skipped.push(participant + " — " + reason);
+      if (mode !== "PREVIEW") {
+        settlementLog_(logSheet, "SKIPPED", participant, email, 0, 0, 0, "", reason);
+      }
+    }
+
+    if (!email) { skip("no email on file in the Roster tab"); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { skip("Roster email looks invalid: " + email); return; }
+    if (group.orders.length === 0) { skip("no orders to settle"); return; }
+
+    var total = 0, tickets = 0, paidTotal = 0;
+    group.orders.forEach(function (o) {
+      total += o.amount; tickets += o.qty;
+      if (o.status.toLowerCase() === "paid") paidTotal += o.amount;
+    });
+    var fingerprint = settlementFingerprint_(participant, group.orders, total);
+    var prior = priorActions[fingerprint] || {};
+    if (mode === "DRAFT" && (prior.DRAFTED || prior.SENT)) {
+      skip("already " + (prior.SENT ? "sent" : "drafted") + " for this exact set of orders");
+      return;
+    }
+    if (mode === "SEND" && prior.SENT) {
+      skip("already sent for this exact set of orders");
+      return;
+    }
+
+    var built = settlementBuildEmail_(participant, group, total, tickets, paidTotal);
+
+    try {
+      if (mode === "PREVIEW") {
+        console.log("[PREVIEW] " + participant + " <" + email + "> — " +
+          group.orders.length + " orders, " + tickets + " tickets, " +
+          settlementMoney_(total) + " | " + built.subject);
+      } else if (mode === "DRAFT") {
+        GmailApp.createDraft(email, built.subject, built.text, {
+          htmlBody: built.html, name: SETTLEMENT_TEAM_NAME + " Raffle"
+        });
+        settlementLog_(logSheet, "DRAFTED", participant, email,
+          group.orders.length, tickets, total, fingerprint, built.subject);
+      } else { // SEND
+        GmailApp.sendEmail(email, built.subject, built.text, {
+          htmlBody: built.html, name: SETTLEMENT_TEAM_NAME + " Raffle"
+        });
+        settlementLog_(logSheet, "SENT", participant, email,
+          group.orders.length, tickets, total, fingerprint, built.subject);
+      }
+      done.push(participant + " (" + settlementMoney_(total) + ")");
+      grandTotal += total;
+    } catch (e) {
+      failed.push(participant + " — " + e.message);
+      if (mode !== "PREVIEW") {
+        settlementLog_(logSheet, "FAILED", participant, email,
+          group.orders.length, tickets, total, fingerprint, String(e.message || e));
+      }
+    }
+  });
+
+  Object.keys(unknownParticipants).forEach(function (p) {
+    skipped.push(p + " — has orders in All Orders but is NOT in the Roster tab");
+  });
+
+  // --- Summary (reconciles: valid + duplicates + test = all order rows) ---
+  var verb = mode === "PREVIEW" ? "Previewed" : (mode === "DRAFT" ? "Drafted" : "Sent");
+  var lines = [
+    verb + " " + done.length + " family email(s), totalling " + settlementMoney_(grandTotal) + ".",
+    "Orders check: " + stats.rows + " order rows read — valid " +
+      settlementMoney_(stats.validAmount) + ", duplicates excluded " +
+      settlementMoney_(stats.dupAmount) + ", test orders excluded " + stats.test +
+      " (" + settlementMoney_(stats.testAmount) + ")."
+  ];
+  if (skipped.length) lines.push("\nSkipped (" + skipped.length + "):\n• " + skipped.join("\n• "));
+  if (failed.length) lines.push("\nFAILED (" + failed.length + "):\n• " + failed.join("\n• "));
+  var summary = lines.join("\n");
+  console.log(summary);
+  if (ui) ui.alert(summary);
+  return summary;
+}
+
+/** Builds the subject + plain-text + HTML bodies for one family. */
+function settlementBuildEmail_(participant, group, total, tickets, paidTotal) {
+  var outstanding = total - paidTotal;
+  var asOf = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "MMMM d, yyyy");
+  var subject = "Action Required: Waxers Raffle Settlement — " + participant +
+                " (" + settlementMoney_(total) + " to transfer)";
+
+  // ----- plain text -----
+  var text = [];
+  text.push("Hi " + participant + " family,");
+  text.push("");
+  text.push("Here are the raffle ticket orders recorded under " + participant +
+            " in the " + SETTLEMENT_TEAM_NAME + " raffle, as of " + asOf + ":");
+  text.push("");
+  group.orders.forEach(function (o) {
+    text.push("  - " + o.buyer + " — " + o.pkg + ", " + o.qty +
+              (o.qty === 1 ? " ticket" : " tickets") + " — " + settlementMoney_(o.amount) +
+              " — Ref " + o.ref + (o.status ? " — " + o.status : ""));
+  });
+  if (group.duplicates.length) {
+    text.push("");
+    text.push("Not counted (marked duplicate):");
+    group.duplicates.forEach(function (o) {
+      text.push("  - " + o.buyer + " — " + settlementMoney_(o.amount) + " — Ref " + o.ref);
+    });
+  }
+  text.push("");
+  text.push("TOTALS");
+  text.push("  Orders: " + group.orders.length);
+  text.push("  Tickets: " + tickets);
+  text.push("  Marked Paid in the sheet: " + settlementMoney_(paidTotal));
+  text.push("  Still outstanding from buyers: " + settlementMoney_(outstanding));
+  text.push("  FULL AMOUNT TO TRANSFER: " + settlementMoney_(total));
+  text.push("");
+  text.push("WHAT TO DO");
+  text.push("1. Check the list above. If any buyer has not paid you yet, or anything " +
+            "looks wrong, reply to this email with the buyer's name and reference " +
+            "code — please don't cover it out of pocket.");
+  text.push("2. e-Transfer the full amount of " + settlementMoney_(total) + " to:");
+  text.push("     " + SETTLEMENT_COLLECTION_EMAIL);
+  text.push("   Memo: Raffle - " + participant);
+  text.push("3. Please send it ahead of draw night, Thursday, November 26.");
+  text.push("");
+  text.push("Thank you for supporting the team!");
+  text.push(SETTLEMENT_TEAM_NAME + " Fundraising Committee");
+
+  // ----- HTML -----
+  var rowsHtml = group.orders.map(function (o) {
+    return "<tr>" +
+      "<td><strong>" + settlementEsc_(o.buyer) + "</strong></td>" +
+      "<td>" + settlementEsc_(o.pkg) + "</td>" +
+      "<td style=\"text-align:center;\">" + o.qty + "</td>" +
+      "<td style=\"text-align:right;\">" + settlementMoney_(o.amount) + "</td>" +
+      "<td><code>" + settlementEsc_(o.ref) + "</code></td>" +
+      "<td><em>" + settlementEsc_(o.status) + "</em></td></tr>";
+  }).join("");
+  var dupHtml = "";
+  if (group.duplicates.length) {
+    dupHtml = "<p style=\"font-family:Arial,sans-serif;font-size:13px;color:#888;\">" +
+      "Not counted (marked duplicate): " +
+      group.duplicates.map(function (o) {
+        return settlementEsc_(o.buyer) + " — " + settlementMoney_(o.amount) +
+               " — Ref " + settlementEsc_(o.ref);
+      }).join("; ") + "</p>";
+  }
+  var html =
+    "<p>Hi " + settlementEsc_(participant) + " family,</p>" +
+    "<p>Here are the raffle ticket orders recorded under <strong>" +
+      settlementEsc_(participant) + "</strong> in the " + SETTLEMENT_TEAM_NAME +
+      " raffle, as of " + asOf + ":</p>" +
+    "<table border=\"1\" cellpadding=\"8\" cellspacing=\"0\" style=\"border-collapse:collapse;" +
+      "font-family:Arial,sans-serif;font-size:13px;width:100%;max-width:650px;\">" +
+      "<thead><tr style=\"background-color:#f2f2f2;text-align:left;\">" +
+      "<th>Buyer</th><th>Package</th><th style=\"text-align:center;\">Qty</th>" +
+      "<th style=\"text-align:right;\">Amount</th><th>Ref Code</th><th>Status</th>" +
+      "</tr></thead><tbody>" + rowsHtml + "</tbody></table>" +
+    dupHtml +
+    "<div style=\"margin-top:15px;font-family:Arial,sans-serif;font-size:14px;\">" +
+      "<p>Orders: " + group.orders.length + " &nbsp;•&nbsp; Tickets: " + tickets + "<br>" +
+      "Marked Paid in the sheet: " + settlementMoney_(paidTotal) + "<br>" +
+      "Still outstanding from buyers: " + settlementMoney_(outstanding) + "<br>" +
+      "<strong>Total Amount to Transfer: <span style=\"font-size:16px;color:#1b5e20;\">" +
+        settlementMoney_(total) + "</span></strong></p></div>" +
+    "<hr style=\"border:0;border-top:1px solid #ddd;margin:20px 0;\">" +
+    "<h4 style=\"margin-bottom:8px;\">What to do</h4>" +
+    "<ol style=\"line-height:1.6;font-family:Arial,sans-serif;font-size:13px;\">" +
+      "<li><strong>Check the list.</strong> If any buyer has not paid you yet, or anything " +
+        "looks wrong, reply to this email with the buyer's name and reference code — " +
+        "please don't cover it out of pocket.</li>" +
+      "<li><strong>Send Interac e-Transfer</strong> for the full amount of <strong>" +
+        settlementMoney_(total) + "</strong> to:<br>" +
+        "&bull; <strong>EMT Address:</strong> <code>" + SETTLEMENT_COLLECTION_EMAIL + "</code><br>" +
+        "&bull; <strong>Memo:</strong> <code>Raffle - " + settlementEsc_(participant) + "</code></li>" +
+      "<li>Please send it ahead of draw night, <strong>Thursday, November 26</strong>.</li>" +
+    "</ol>" +
+    "<p style=\"font-family:Arial,sans-serif;font-size:13px;color:#555;\">" +
+      "Thank you for supporting the team!<br><strong>" + SETTLEMENT_TEAM_NAME +
+      " Fundraising Committee</strong></p>";
+
+  return { subject: subject, text: text.join("\n"), html: html };
+}
+
+/** Test orders: any one strong signal excludes the row from settlement. */
+function settlementIsTestOrder_(o) {
+  var status = o.status.toLowerCase();
+  if (status.indexOf("test") !== -1) return true;
+  if (o.clientId.toLowerCase().indexOf("probe-") === 0) return true;
+  if (o.buyerEmail.toLowerCase().indexOf("muse.ai") !== -1) return true;
+  if (/\btest(ing)?\b/i.test(o.buyer)) return true;
+  return false;
+}
+
+/** Stable fingerprint of one family's exact order set + total. */
+function settlementFingerprint_(participant, orders, total) {
+  var refs = orders.map(function (o) { return o.ref; }).sort();
+  return participant + "|" + refs.join(",") + "|" + total.toFixed(2);
+}
+
+function settlementGetLogSheet_(ss) {
+  var sheet = ss.getSheetByName(SETTLEMENT_LOG_SHEET);
+  if (!sheet) {
+    sheet = ss.insertSheet(SETTLEMENT_LOG_SHEET);
+    sheet.appendRow(["Timestamp", "Action", "Participant", "Email",
+                     "Orders", "Tickets", "Total", "Fingerprint", "Detail"]);
+    sheet.setFrozenRows(1);
+    sheet.getRange(1, 1, 1, 9).setFontWeight("bold");
+  }
+  return sheet;
+}
+
+function settlementLog_(sheet, action, participant, email, orders, tickets, total, fingerprint, detail) {
+  sheet.appendRow([new Date(), action, participant, email || "",
+                   orders, tickets, total, fingerprint, detail || ""]);
+}
+
+function settlementStr_(v) { return (v === null || v === undefined) ? "" : String(v).trim(); }
+
+function settlementMoney_(n) {
+  var parts = (Math.round(n * 100) / 100).toFixed(2).split(".");
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return "$" + parts.join(".");
+}
+
+function settlementEsc_(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
