@@ -12,7 +12,14 @@
  *    per-player tabs whose names must match exactly.
  *  - Dedupes by reference code AND client order ID, and excludes
  *    test orders on several signals (status, probe IDs, test
- *    buyer names/emails) — not just a "testing" status.
+ *    buyer names/emails) — not just a "testing" status. Orders
+ *    whose status marks them duplicate / cancelled / refunded /
+ *    void / invalid are likewise kept out of the totals.
+ *  - Preview mode logs EVERY counted and excluded order (ref,
+ *    buyer, amount, status) so a total can be audited from the
+ *    log alone, and every run cross-checks All Orders against
+ *    each player's own tab, warning about any reference code
+ *    that exists in one but not the other.
  *  - Repeat-safe: every draft/send is recorded in a "Settlement
  *    Log" tab with a fingerprint of the exact order set. Running
  *    the tool twice never emails a family twice for the same set
@@ -138,16 +145,22 @@ function runParentSettlement_(mode) {
       clientId: settlementStr_(row[SETTLEMENT_COL.CLIENT_ID])
     };
 
+    if (!byParticipant[participant]) {
+      byParticipant[participant] = { orders: [], duplicates: [], test: [], all: {} };
+    }
+    var group0 = byParticipant[participant];
+    if (!group0.all[ref]) group0.all[ref] = order;
+
     if (settlementIsTestOrder_(order)) {
       stats.test++; stats.testAmount += amount;
+      group0.test.push(order);
       continue;
     }
-    var isDupStatus = order.status.toLowerCase().indexOf("duplicate") !== -1;
+    var isDupStatus = settlementExcludedByStatus_(order.status);
     var isDupKey = seenRefs[ref] || (order.clientId && seenClientIds[order.clientId]);
     seenRefs[ref] = true;
     if (order.clientId) seenClientIds[order.clientId] = true;
 
-    if (!byParticipant[participant]) byParticipant[participant] = { orders: [], duplicates: [] };
     if (isDupStatus || isDupKey) {
       byParticipant[participant].duplicates.push(order);
       stats.dupAmount += amount;
@@ -178,7 +191,7 @@ function runParentSettlement_(mode) {
 
   rosterOrder.forEach(function (participant) {
     var email = familyEmail[participant];
-    var group = byParticipant[participant] || { orders: [], duplicates: [] };
+    var group = byParticipant[participant] || { orders: [], duplicates: [], test: [], all: {} };
 
     function skip(reason) {
       skipped.push(participant + " — " + reason);
@@ -214,6 +227,18 @@ function runParentSettlement_(mode) {
         console.log("[PREVIEW] " + participant + " <" + email + "> — " +
           group.orders.length + " orders, " + tickets + " tickets, " +
           settlementMoney_(total) + " | " + built.subject);
+        group.orders.forEach(function (o) {
+          console.log("    + COUNTED " + o.ref + " | " + o.buyer + " | " +
+            settlementMoney_(o.amount) + " | " + (o.status || "(no status)"));
+        });
+        group.duplicates.forEach(function (o) {
+          console.log("    - NOT COUNTED " + o.ref + " | " + o.buyer + " | " +
+            settlementMoney_(o.amount) + " | " + (o.status || "(no status)"));
+        });
+        group.test.forEach(function (o) {
+          console.log("    - EXCLUDED (test) " + o.ref + " | " + o.buyer + " | " +
+            settlementMoney_(o.amount) + " | " + (o.status || "(no status)"));
+        });
       } else if (mode === "DRAFT") {
         GmailApp.createDraft(email, built.subject, built.text, {
           htmlBody: built.html, name: SETTLEMENT_TEAM_NAME + " Raffle"
@@ -247,10 +272,15 @@ function runParentSettlement_(mode) {
   var lines = [
     verb + " " + done.length + " family email(s), totalling " + settlementMoney_(grandTotal) + ".",
     "Orders check: " + stats.rows + " order rows read — valid " +
-      settlementMoney_(stats.validAmount) + ", duplicates excluded " +
+      settlementMoney_(stats.validAmount) + ", duplicate/cancelled excluded " +
       settlementMoney_(stats.dupAmount) + ", test orders excluded " + stats.test +
       " (" + settlementMoney_(stats.testAmount) + ")."
   ];
+  var crossWarnings = settlementCrossCheck_(ss, rosterOrder, byParticipant);
+  if (crossWarnings.length) {
+    lines.push("\nCROSS-CHECK WARNINGS (All Orders vs player tabs):\n• " +
+      crossWarnings.join("\n• "));
+  }
   if (skipped.length) lines.push("\nSkipped (" + skipped.length + "):\n• " + skipped.join("\n• "));
   if (failed.length) lines.push("\nFAILED (" + failed.length + "):\n• " + failed.join("\n• "));
   var summary = lines.join("\n");
@@ -280,9 +310,10 @@ function settlementBuildEmail_(participant, group, total, tickets, paidTotal) {
   });
   if (group.duplicates.length) {
     text.push("");
-    text.push("Not counted (marked duplicate):");
+    text.push("Not counted (duplicate / cancelled / refunded):");
     group.duplicates.forEach(function (o) {
-      text.push("  - " + o.buyer + " — " + settlementMoney_(o.amount) + " — Ref " + o.ref);
+      text.push("  - " + o.buyer + " — " + settlementMoney_(o.amount) + " — Ref " + o.ref +
+                (o.status ? " — " + o.status : ""));
     });
   }
   text.push("");
@@ -318,10 +349,11 @@ function settlementBuildEmail_(participant, group, total, tickets, paidTotal) {
   var dupHtml = "";
   if (group.duplicates.length) {
     dupHtml = "<p style=\"font-family:Arial,sans-serif;font-size:13px;color:#888;\">" +
-      "Not counted (marked duplicate): " +
+      "Not counted (duplicate / cancelled / refunded): " +
       group.duplicates.map(function (o) {
         return settlementEsc_(o.buyer) + " — " + settlementMoney_(o.amount) +
-               " — Ref " + settlementEsc_(o.ref);
+               " — Ref " + settlementEsc_(o.ref) +
+               (o.status ? " — " + settlementEsc_(o.status) : "");
       }).join("; ") + "</p>";
   }
   var html =
@@ -359,6 +391,49 @@ function settlementBuildEmail_(participant, group, total, tickets, paidTotal) {
       " Fundraising Committee</strong></p>";
 
   return { subject: subject, text: text.join("\n"), html: html };
+}
+
+/** Statuses that keep an order out of the totals (listed as "not counted"). */
+function settlementExcludedByStatus_(status) {
+  return /duplicate|cancel|refund|void|invalid/i.test(status || "");
+}
+
+/**
+ * Cross-check: every reference code in All Orders for a participant
+ * should also appear in that player's own tab, and vice versa.
+ * Returns human-readable warnings for any mismatch. A missing
+ * player tab is not a warning (All Orders is the source of truth).
+ */
+function settlementCrossCheck_(ss, rosterOrder, byParticipant) {
+  var warnings = [];
+  rosterOrder.forEach(function (participant) {
+    var tab = ss.getSheetByName(participant);
+    if (!tab) return;
+    var group = byParticipant[participant] || { all: {} };
+    var tabRefs = {};
+    var tabRows = tab.getDataRange().getValues();
+    for (var i = 1; i < tabRows.length; i++) {
+      var ref = settlementStr_(tabRows[i][7]);   // player tab: Ref Code is column H
+      if (!ref) continue;
+      tabRefs[ref] = { buyer: settlementStr_(tabRows[i][1]),
+                       amount: parseFloat(tabRows[i][6]) || 0 };
+    }
+    Object.keys(group.all).forEach(function (ref) {
+      if (!tabRefs[ref]) {
+        warnings.push(participant + ": " + ref + " (" + group.all[ref].buyer + ", " +
+          settlementMoney_(group.all[ref].amount) + ") is in All Orders but NOT in the " +
+          participant + " tab");
+      }
+    });
+    Object.keys(tabRefs).forEach(function (ref) {
+      if (!group.all[ref]) {
+        warnings.push(participant + ": " + ref + " (" + tabRefs[ref].buyer + ", " +
+          settlementMoney_(tabRefs[ref].amount) + ") is in the " + participant +
+          " tab but NOT in All Orders");
+      }
+    });
+  });
+  return warnings;
 }
 
 /** Test orders: any one strong signal excludes the row from settlement. */

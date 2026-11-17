@@ -40,10 +40,17 @@ Always in this order:
   with no email on file (currently Brandon J. and Mike C.) are skipped and
   reported — add the address to the Roster tab and re-run; no redeploy
   needed.
-- **Excluded from totals:** orders whose EMT Status contains "duplicate"
-  (listed in the email as *not counted*), repeat rows with the same
-  reference code or client order ID, and test orders (status/name mentions
-  of "test", `probe-` client IDs, `@muse.ai` buyer emails).
+- **Excluded from totals:** orders whose EMT Status contains "duplicate",
+  "cancel", "refund", "void" or "invalid" (listed in the email as *not
+  counted*, with their status shown), repeat rows with the same reference
+  code or client order ID, and test orders (status/name mentions of
+  "test", `probe-` client IDs, `@muse.ai` buyer emails).
+- **Auditable:** Preview logs every counted and excluded order (reference
+  code, buyer, amount, status), so any family total can be verified from
+  the execution log alone.
+- **Cross-checked:** every run compares All Orders against each player's
+  own tab and warns about any reference code that exists in one but not
+  the other — the classic cause of "my count differs from the email".
 - **Totals:** the email asks for the **full valid total** under the player,
   and breaks it down into *Marked Paid in the sheet* vs *Still outstanding
   from buyers*. Step 1 of the email tells the family to reply with the
@@ -75,6 +82,10 @@ ahead of draw night (Thursday, November 26).
   protection working. If you genuinely need to redo them and their orders
   haven't changed, delete their row(s) in the **Settlement Log** tab and
   re-run.
-- **Totals look wrong for one family:** check that family's rows in
-  **All Orders** — status text drives the Paid/outstanding split and the
-  duplicate/test exclusions.
+- **Totals look wrong for one family:** run Preview and read that family's
+  COUNTED / NOT COUNTED lines in the execution log — every row behind the
+  total is listed with its amount and status. If a CROSS-CHECK WARNING
+  names the family, a row exists in All Orders but not in their player
+  tab (or the reverse); All Orders is the master record, so reconcile
+  from there. Status text drives the Paid/outstanding split and the
+  duplicate/cancelled/test exclusions.
