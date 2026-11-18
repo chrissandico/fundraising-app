@@ -206,10 +206,9 @@ function runParentSettlement_(mode) {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { skip("Roster email looks invalid: " + email); return; }
     if (group.orders.length === 0) { skip("no orders to settle"); return; }
 
-    var total = 0, tickets = 0, paidTotal = 0;
+    var total = 0, tickets = 0;
     group.orders.forEach(function (o) {
       total += o.amount; tickets += o.qty;
-      if (o.status.toLowerCase() === "paid") paidTotal += o.amount;
     });
     var fingerprint = settlementFingerprint_(participant, group.orders, total);
     var prior = priorActions[fingerprint] || {};
@@ -222,7 +221,7 @@ function runParentSettlement_(mode) {
       return;
     }
 
-    var built = settlementBuildEmail_(participant, group, total, tickets, paidTotal);
+    var built = settlementBuildEmail_(participant, group, total, tickets);
 
     try {
       if (mode === "PREVIEW") {
@@ -292,8 +291,7 @@ function runParentSettlement_(mode) {
 }
 
 /** Builds the subject + plain-text + HTML bodies for one family. */
-function settlementBuildEmail_(participant, group, total, tickets, paidTotal) {
-  var outstanding = total - paidTotal;
+function settlementBuildEmail_(participant, group, total, tickets) {
   var asOf = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "MMMM d, yyyy");
   var subject = "Action Required: Waxers Raffle Settlement — " + participant +
                 " (" + settlementMoney_(total) + " to transfer)";
@@ -308,22 +306,19 @@ function settlementBuildEmail_(participant, group, total, tickets, paidTotal) {
   group.orders.forEach(function (o) {
     text.push("  - " + o.buyer + " — " + o.pkg + ", " + o.qty +
               (o.qty === 1 ? " ticket" : " tickets") + " — " + settlementMoney_(o.amount) +
-              " — Ref " + o.ref + (o.status ? " — " + o.status : ""));
+              " — Ref " + o.ref);
   });
   if (group.duplicates.length) {
     text.push("");
     text.push("Not counted (duplicate / cancelled / refunded):");
     group.duplicates.forEach(function (o) {
-      text.push("  - " + o.buyer + " — " + settlementMoney_(o.amount) + " — Ref " + o.ref +
-                (o.status ? " — " + o.status : ""));
+      text.push("  - " + o.buyer + " — " + settlementMoney_(o.amount) + " — Ref " + o.ref);
     });
   }
   text.push("");
   text.push("TOTALS");
   text.push("  Orders: " + group.orders.length);
   text.push("  Tickets: " + tickets);
-  text.push("  Marked Paid in the sheet: " + settlementMoney_(paidTotal));
-  text.push("  Still outstanding from buyers: " + settlementMoney_(outstanding));
   text.push("  FULL AMOUNT TO TRANSFER: " + settlementMoney_(total));
   text.push("");
   text.push("WHAT TO DO");
@@ -345,8 +340,7 @@ function settlementBuildEmail_(participant, group, total, tickets, paidTotal) {
       "<td>" + settlementEsc_(o.pkg) + "</td>" +
       "<td style=\"text-align:center;\">" + o.qty + "</td>" +
       "<td style=\"text-align:right;\">" + settlementMoney_(o.amount) + "</td>" +
-      "<td><code>" + settlementEsc_(o.ref) + "</code></td>" +
-      "<td><em>" + settlementEsc_(o.status) + "</em></td></tr>";
+      "<td><code>" + settlementEsc_(o.ref) + "</code></td></tr>";
   }).join("");
   var dupHtml = "";
   if (group.duplicates.length) {
@@ -354,8 +348,7 @@ function settlementBuildEmail_(participant, group, total, tickets, paidTotal) {
       "Not counted (duplicate / cancelled / refunded): " +
       group.duplicates.map(function (o) {
         return settlementEsc_(o.buyer) + " — " + settlementMoney_(o.amount) +
-               " — Ref " + settlementEsc_(o.ref) +
-               (o.status ? " — " + settlementEsc_(o.status) : "");
+               " — Ref " + settlementEsc_(o.ref);
       }).join("; ") + "</p>";
   }
   var html =
@@ -367,13 +360,11 @@ function settlementBuildEmail_(participant, group, total, tickets, paidTotal) {
       "font-family:Arial,sans-serif;font-size:13px;width:100%;max-width:650px;\">" +
       "<thead><tr style=\"background-color:#f2f2f2;text-align:left;\">" +
       "<th>Buyer</th><th>Package</th><th style=\"text-align:center;\">Qty</th>" +
-      "<th style=\"text-align:right;\">Amount</th><th>Ref Code</th><th>Status</th>" +
+      "<th style=\"text-align:right;\">Amount</th><th>Ref Code</th>" +
       "</tr></thead><tbody>" + rowsHtml + "</tbody></table>" +
     dupHtml +
     "<div style=\"margin-top:15px;font-family:Arial,sans-serif;font-size:14px;\">" +
       "<p>Orders: " + group.orders.length + " &nbsp;•&nbsp; Tickets: " + tickets + "<br>" +
-      "Marked Paid in the sheet: " + settlementMoney_(paidTotal) + "<br>" +
-      "Still outstanding from buyers: " + settlementMoney_(outstanding) + "<br>" +
       "<strong>Total Amount to Transfer: <span style=\"font-size:16px;color:#1b5e20;\">" +
         settlementMoney_(total) + "</span></strong></p></div>" +
     "<hr style=\"border:0;border-top:1px solid #ddd;margin:20px 0;\">" +

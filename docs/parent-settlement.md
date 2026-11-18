@@ -42,7 +42,7 @@ Always in this order:
   needed.
 - **Excluded from totals:** orders whose EMT Status contains "duplicate",
   "cancel", "refund", "void" or "invalid" (listed in the email as *not
-  counted*, with their status shown), repeat rows with the same reference
+  counted*), repeat rows with the same reference
   code or client order ID, and test orders (status/name mentions of
   "test", `probe-` client IDs, `@muse.ai` buyer emails).
 - **Auditable:** Preview logs every counted and excluded order (reference
@@ -54,11 +54,13 @@ Always in this order:
   the two places — the classic causes of "my count differs from the
   email". The settlement always reads **All Orders**, so payment
   statuses must be maintained there, not only in the player tabs.
-- **Totals:** the email asks for the **full valid total** under the player,
-  and breaks it down into *Marked Paid in the sheet* vs *Still outstanding
-  from buyers*. Step 1 of the email tells the family to reply with the
-  buyer's name + reference code instead of covering an unpaid buyer out of
-  pocket.
+- **Totals:** the email asks for the **full valid total** under the player —
+  orders, tickets and the total only. **No payment statuses appear anywhere
+  in the email** (no per-order status, no Paid/outstanding breakdown).
+  Step 1 of the email tells the family to reply with the buyer's name +
+  reference code instead of covering an unpaid buyer out of pocket.
+  (Statuses still appear in the Preview execution log, where they are
+  useful for auditing.)
 - **Repeat-safe:** every draft/send is written to a **Settlement Log** tab
   with a fingerprint of the exact order set. Re-running never emails a
   family twice for the same orders; if new orders arrive for a family,
@@ -71,8 +73,8 @@ Always in this order:
 
 Subject: `Action Required: Waxers Raffle Settlement — <Player> ($X to transfer)`
 
-Contents: the order table (buyer, package, qty, amount, reference code,
-status), duplicate orders listed as not counted, the totals block, and three
+Contents: the order table (buyer, package, qty, amount, reference code — no
+payment status), duplicate orders listed as not counted, the totals block, and three
 steps — check the list / reply about unpaid buyers, e-Transfer the full
 amount to the collection address with memo `Raffle - <Player>`, and send it
 ahead of draw night (Thursday, November 26).
@@ -90,5 +92,5 @@ ahead of draw night (Thursday, November 26).
   total is listed with its amount and status. If a CROSS-CHECK WARNING
   names the family, a row exists in All Orders but not in their player
   tab (or the reverse); All Orders is the master record, so reconcile
-  from there. Status text drives the Paid/outstanding split and the
-  duplicate/cancelled/test exclusions.
+  from there. Status text drives the duplicate/cancelled/test exclusions
+  (statuses are never shown in the family email itself).
