@@ -339,9 +339,9 @@ function settlementBuildEmail_(participant, group, total, tickets) {
   var rowsHtml = group.orders.map(function (o) {
     return "<tr>" +
       "<td><strong>" + settlementEsc_(o.buyer) + "</strong>" +
-        (o.tickets ? "<br><span style=\"color:#666;font-size:11px;\">" +
-          settlementEsc_(o.tickets) + "</span>" : "") + "</td>" +
-      "<td>" + settlementEsc_(o.pkg) + "</td>" +
+        (o.pkg ? "<br><span style=\"color:#666;font-size:11px;\">" +
+          settlementEsc_(o.pkg) + "</span>" : "") + "</td>" +
+      "<td>" + settlementEsc_(o.tickets) + "</td>" +
       "<td style=\"text-align:center;\">" + o.qty + "</td>" +
       "<td style=\"text-align:right;\">" + settlementMoney_(o.amount) + "</td>" +
       "<td><code>" + settlementEsc_(o.ref) + "</code></td></tr>";
@@ -363,7 +363,7 @@ function settlementBuildEmail_(participant, group, total, tickets) {
     "<table border=\"1\" cellpadding=\"8\" cellspacing=\"0\" style=\"border-collapse:collapse;" +
       "font-family:Arial,sans-serif;font-size:13px;width:100%;max-width:650px;\">" +
       "<thead><tr style=\"background-color:#f2f2f2;text-align:left;\">" +
-      "<th>Buyer</th><th>Package</th><th style=\"text-align:center;\">Qty</th>" +
+      "<th>Buyer</th><th>Ticket Numbers</th><th style=\"text-align:center;\">Qty</th>" +
       "<th style=\"text-align:right;\">Amount</th><th>Ref Code</th>" +
       "</tr></thead><tbody>" + rowsHtml + "</tbody></table>" +
     dupHtml +
