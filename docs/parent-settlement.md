@@ -81,7 +81,8 @@ buyer's name — then ticket numbers, qty, amount, reference code — no
 payment status), duplicate orders listed as not counted, the totals block, and three
 steps — check the list / reply about unpaid buyers, e-Transfer the full
 amount to the collection address with memo `Raffle - <Player>`, and send it
-ahead of draw night (Thursday, November 26).
+before the deadline — midnight on Wednesday, November 25, ahead of draw
+night (Thursday, November 26).
 
 ## Troubleshooting
 

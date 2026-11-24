@@ -315,7 +315,8 @@ function settlementBuildEmail_(participant, group, total, tickets) {
   text.push("2. e-Transfer the full amount of " + settlementMoney_(total) + " to:");
   text.push("     " + SETTLEMENT_COLLECTION_EMAIL);
   text.push("   Memo: Raffle - " + participant);
-  text.push("3. Please send it ahead of draw night, Thursday, November 26.");
+  text.push("3. DEADLINE: send it BEFORE MIDNIGHT on Wednesday, November 25 — " +
+            "all payments must be in by then, ahead of draw night, Thursday, November 26.");
   text.push("");
   text.push("Thank you for supporting the team!");
   text.push(SETTLEMENT_TEAM_NAME + " Fundraising Committee");
@@ -365,7 +366,8 @@ function settlementBuildEmail_(participant, group, total, tickets) {
         settlementMoney_(total) + "</strong> to:<br>" +
         "&bull; <strong>EMT Address:</strong> <code>" + SETTLEMENT_COLLECTION_EMAIL + "</code><br>" +
         "&bull; <strong>Memo:</strong> <code>Raffle - " + settlementEsc_(participant) + "</code></li>" +
-      "<li>Please send it ahead of draw night, <strong>Thursday, November 26</strong>.</li>" +
+      "<li><strong>Deadline: send it before midnight on Wednesday, November 25</strong> — " +
+        "all payments must be in by then, ahead of draw night, Thursday, November 26.</li>" +
     "</ol>" +
     "<p style=\"font-family:Arial,sans-serif;font-size:13px;color:#555;\">" +
       "Thank you for supporting the team!<br><strong>" + SETTLEMENT_TEAM_NAME +
