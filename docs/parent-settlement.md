@@ -73,7 +73,8 @@ Always in this order:
 
 Subject: `Action Required: Waxers Raffle Settlement — <Player> ($X to transfer)`
 
-Contents: the order table (buyer, package, qty, amount, reference code — no
+Contents: the order table (buyer — with that order's ticket numbers listed
+under the buyer's name — package, qty, amount, reference code — no
 payment status), duplicate orders listed as not counted, the totals block, and three
 steps — check the list / reply about unpaid buyers, e-Transfer the full
 amount to the collection address with memo `Raffle - <Player>`, and send it

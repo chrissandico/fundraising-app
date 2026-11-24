@@ -63,7 +63,7 @@ var SETTLEMENT_LOG_SHEET = "Settlement Log";
 // Client Order ID, Receipt Emailed, Family Emailed
 var SETTLEMENT_COL = {
   BUYER: 1, EMAIL: 2, PARTICIPANT: 4, PACKAGE: 5, QTY: 6,
-  AMOUNT: 7, REF: 8, STATUS: 10, CLIENT_ID: 11
+  AMOUNT: 7, REF: 8, TICKETS: 9, STATUS: 10, CLIENT_ID: 11
 };
 
 /** Adds the "Raffle Settlement" menu when the spreadsheet opens. */
@@ -143,6 +143,7 @@ function runParentSettlement_(mode) {
       qty: parseInt(row[SETTLEMENT_COL.QTY], 10) || 0,
       amount: amount,
       ref: ref,
+      tickets: settlementStr_(row[SETTLEMENT_COL.TICKETS]),
       status: settlementStr_(row[SETTLEMENT_COL.STATUS]),
       clientId: settlementStr_(row[SETTLEMENT_COL.CLIENT_ID])
     };
@@ -307,6 +308,7 @@ function settlementBuildEmail_(participant, group, total, tickets) {
     text.push("  - " + o.buyer + " — " + o.pkg + ", " + o.qty +
               (o.qty === 1 ? " ticket" : " tickets") + " — " + settlementMoney_(o.amount) +
               " — Ref " + o.ref);
+    if (o.tickets) text.push("      Tickets: " + o.tickets);
   });
   if (group.duplicates.length) {
     text.push("");
@@ -336,7 +338,9 @@ function settlementBuildEmail_(participant, group, total, tickets) {
   // ----- HTML -----
   var rowsHtml = group.orders.map(function (o) {
     return "<tr>" +
-      "<td><strong>" + settlementEsc_(o.buyer) + "</strong></td>" +
+      "<td><strong>" + settlementEsc_(o.buyer) + "</strong>" +
+        (o.tickets ? "<br><span style=\"color:#666;font-size:11px;\">" +
+          settlementEsc_(o.tickets) + "</span>" : "") + "</td>" +
       "<td>" + settlementEsc_(o.pkg) + "</td>" +
       "<td style=\"text-align:center;\">" + o.qty + "</td>" +
       "<td style=\"text-align:right;\">" + settlementMoney_(o.amount) + "</td>" +
