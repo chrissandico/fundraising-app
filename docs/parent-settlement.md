@@ -58,7 +58,7 @@ Always in this order:
   orders, tickets and the total only. **No payment statuses appear anywhere
   in the email** (no per-order status, no Paid/outstanding breakdown).
   Step 1 of the email tells the family to reply with the buyer's name +
-  reference code instead of covering an unpaid buyer out of pocket.
+  reference code.
   (Statuses still appear in the Preview execution log, where they are
   useful for auditing.)
 - **Always regenerates:** every run creates a fresh draft (or sends a

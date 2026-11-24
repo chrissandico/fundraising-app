@@ -56,7 +56,7 @@
 
 // The team inbox that collects each family's full settlement.
 // CONFIRM this is the real collection address before sending.
-var SETTLEMENT_COLLECTION_EMAIL = "payments@markhamwaxers.ca";
+var SETTLEMENT_COLLECTION_EMAIL = "waxers2014a@gmail.com";
 
 var SETTLEMENT_TEAM_NAME = "Markham Waxers U13A";
 var SETTLEMENT_LOG_SHEET = "Settlement Log";
@@ -311,7 +311,7 @@ function settlementBuildEmail_(participant, group, total, tickets) {
   text.push("WHAT TO DO");
   text.push("1. Check the list above. If any buyer has not paid you yet, or anything " +
             "looks wrong, reply to this email with the buyer's name and reference " +
-            "code — please don't cover it out of pocket.");
+            "code.");
   text.push("2. e-Transfer the full amount of " + settlementMoney_(total) + " to:");
   text.push("     " + SETTLEMENT_COLLECTION_EMAIL);
   text.push("   Memo: Raffle - " + participant);
@@ -360,8 +360,7 @@ function settlementBuildEmail_(participant, group, total, tickets) {
     "<h4 style=\"margin-bottom:8px;\">What to do</h4>" +
     "<ol style=\"line-height:1.6;font-family:Arial,sans-serif;font-size:13px;\">" +
       "<li><strong>Check the list.</strong> If any buyer has not paid you yet, or anything " +
-        "looks wrong, reply to this email with the buyer's name and reference code — " +
-        "please don't cover it out of pocket.</li>" +
+        "looks wrong, reply to this email with the buyer's name and reference code.</li>" +
       "<li><strong>Send Interac e-Transfer</strong> for the full amount of <strong>" +
         settlementMoney_(total) + "</strong> to:<br>" +
         "&bull; <strong>EMT Address:</strong> <code>" + SETTLEMENT_COLLECTION_EMAIL + "</code><br>" +
