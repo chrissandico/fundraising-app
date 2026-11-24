@@ -61,11 +61,14 @@ Always in this order:
   reference code instead of covering an unpaid buyer out of pocket.
   (Statuses still appear in the Preview execution log, where they are
   useful for auditing.)
-- **Repeat-safe:** every draft/send is written to a **Settlement Log** tab
-  with a fingerprint of the exact order set. Re-running never emails a
-  family twice for the same orders; if new orders arrive for a family,
-  only that family gets a fresh email (delete any stale draft for them
-  first if you use the drafts flow).
+- **Always regenerates:** every run creates a fresh draft (or sends a
+  fresh email) for **every** family with orders — nothing is ever skipped
+  as "already done". The intended workflow is to delete the drafts in
+  Gmail manually after each run. Every draft/send is still written to a
+  **Settlement Log** tab with a fingerprint of the exact order set, but
+  the log is a history/audit record only and never blocks a run.
+  ⚠️ **SEND therefore emails every family every time you confirm it** —
+  the confirmation dialog is the only double-send guard.
 - **Failures don't stop the run:** a bad address or Gmail error is logged
   as FAILED in the Settlement Log and listed in the end-of-run summary.
 
@@ -84,10 +87,10 @@ ahead of draw night (Thursday, November 26).
 
 - **Menu missing:** reload the spreadsheet; if two script files define
   `onOpen`, remove the older one.
-- **A family was skipped as "already drafted/sent":** that's the repeat
-  protection working. If you genuinely need to redo them and their orders
-  haven't changed, delete their row(s) in the **Settlement Log** tab and
-  re-run.
+- **A family got no draft/email:** they were skipped only for having no
+  orders or no email on file — the end-of-run summary says which. Every
+  run regenerates every family's email; there is no "already drafted"
+  skip.
 - **Totals look wrong for one family:** run Preview and read that family's
   COUNTED / NOT COUNTED lines in the execution log — every row behind the
   total is listed with its amount and status. If a CROSS-CHECK WARNING

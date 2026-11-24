@@ -22,11 +22,15 @@
  *    that exists in one but not the other — and about any order
  *    whose EMT Status text differs between the two places (the
  *    settlement always reads All Orders).
- *  - Repeat-safe: every draft/send is recorded in a "Settlement
- *    Log" tab with a fingerprint of the exact order set. Running
- *    the tool twice never emails a family twice for the same set
- *    of orders; if new orders arrive, only the changed families
- *    get a fresh email.
+ *  - Always regenerates (Prof's workflow, 2026-11-24): every run
+ *    creates a fresh draft / sends a fresh email for EVERY family
+ *    with orders — nothing is ever skipped as "already done".
+ *    Prof deletes the drafts in Gmail manually after each run.
+ *    Every draft/send is still recorded in a "Settlement Log" tab
+ *    with a fingerprint of the exact order set, but the log is a
+ *    history/audit record only and never blocks a run. NOTE: this
+ *    means SEND emails every family every time it is confirmed —
+ *    the confirmation dialog is the only double-send guard.
  *  - Sends a real plain-text body alongside the HTML (an empty
  *    text body renders blank in some mail apps and hurts spam
  *    scoring), and HTML-escapes buyer names so a stray "&" or "<"
@@ -173,20 +177,10 @@ function runParentSettlement_(mode) {
     }
   }
 
-  // --- Previous runs: fingerprint -> actions already taken ---
+  // --- Settlement Log: history/audit record only. It is written on
+  // every run but never read to block one (see header note). ---
   var logSheet = (mode === "PREVIEW") ? ss.getSheetByName(SETTLEMENT_LOG_SHEET)
                                       : settlementGetLogSheet_(ss);
-  var priorActions = {}; // fingerprint -> {DRAFTED:true, SENT:true}
-  if (logSheet && logSheet.getLastRow() > 1) {
-    var logRows = logSheet.getDataRange().getValues();
-    for (var l = 1; l < logRows.length; l++) {
-      var fp = settlementStr_(logRows[l][7]);
-      var action = settlementStr_(logRows[l][1]);
-      if (!fp) continue;
-      if (!priorActions[fp]) priorActions[fp] = {};
-      priorActions[fp][action] = true;
-    }
-  }
 
   // --- Per family ---
   var done = [], skipped = [], failed = [];
@@ -212,15 +206,6 @@ function runParentSettlement_(mode) {
       total += o.amount; tickets += o.qty;
     });
     var fingerprint = settlementFingerprint_(participant, group.orders, total);
-    var prior = priorActions[fingerprint] || {};
-    if (mode === "DRAFT" && (prior.DRAFTED || prior.SENT)) {
-      skip("already " + (prior.SENT ? "sent" : "drafted") + " for this exact set of orders");
-      return;
-    }
-    if (mode === "SEND" && prior.SENT) {
-      skip("already sent for this exact set of orders");
-      return;
-    }
 
     var built = settlementBuildEmail_(participant, group, total, tickets);
 
